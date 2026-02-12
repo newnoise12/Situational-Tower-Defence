@@ -323,20 +323,27 @@ function spawnVisitor(){
   const type=types[Math.floor(Math.random()*3)];
   const p=profiles[type];
 
-  visitors.push({
-    x:200,y:200,
-    pathIndex:0,
-    speed:60,
-    type,
-    baseS:p.S,
-    M:p.M,
-    S:p.S,
-    O:20,
-    R:0,
-    riskSensitivity:p.risk,
-    effortSensitivity:p.effort,
-    attempted:false
-  });
+let maxThefts = 1;
+
+if(type === "opportunist") maxThefts = 2;
+if(type === "determined") maxThefts = 4;
+
+visitors.push({
+  x:200,y:200,
+  pathIndex:0,
+  speed:60,
+  type,
+  baseS:p.S,
+  M:p.M,
+  S:p.S,
+  O:20,
+  R:0,
+  riskSensitivity:p.risk,
+  effortSensitivity:p.effort,
+  theftsCommitted:0,
+  maxThefts:maxThefts,
+  visitedShops:{}
+});
 }
 
 /* ======================
@@ -398,28 +405,48 @@ function applySecurity(v){
 
   v.S = Math.max(0, v.S);
 }
-
+  
 function checkShops(v){
-  if(v.attempted) return;
 
-  shops.forEach(shop=>{
-    if(Math.hypot(v.x-shop.x,v.y-shop.y)<60){
+  shops.forEach((shop, index)=>{
 
-      v.O = shop.baseOpportunity - shop.protection*5*v.effortSensitivity;
-      v.M -= shop.management*2;
+    // Skip if already interacted with this shop
+    if(v.visitedShops[index]) return;
 
-      const theftScore = v.M + v.O - (v.R*v.riskSensitivity);
+    // Check if visitor is inside shop area
+    if(Math.hypot(v.x-shop.x, v.y-shop.y) < 60){
 
-      if(theftScore>30){
+      // Mark this shop as visited
+      v.visitedShops[index] = true;
+
+      // Apply shop effects
+      v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
+      v.M -= shop.management * 2;
+
+      const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
+
+      /* ---- UPDATED THEFT LOGIC ---- */
+
+      if(v.theftsCommitted < v.maxThefts && theftScore > 30){
+
+        // Theft occurs
         money -= shop.value;
         reputation -= 5;
-      }
+        v.theftsCommitted++;
+
+        // Optional: emboldening placeholder (we'll refine later)
+        if(v.type === "determined"){
+          v.M += 5; // small motivation boost
+        }
+
+      } 
       else if(v.S > v.M){
+
+        // Legitimate purchase
         money += shop.value;
         reputation += 1;
       }
 
-      v.attempted=true;
     }
   });
 }
@@ -485,4 +512,5 @@ loop(0);
 </script>
 </body>
 </html>
+
 
