@@ -349,7 +349,10 @@ function update(dt){
 
     waveTimer -= dt;
 
-    if(Math.random()<0.03) spawnVisitor();
+    // Only spawn during first 60% of wave
+    if(waveTimer > waveLength * 0.4){
+      if(Math.random()<0.04) spawnVisitor();
+    }
 
     visitors.forEach(v=>{
       moveVisitor(v,dt);
@@ -357,11 +360,16 @@ function update(dt){
       checkShops(v);
     });
 
+    // Guard salary only during wave
     money -= guards.length * 1 * dt;
 
+    // Remove finished visitors
     visitors = visitors.filter(v => v.pathIndex < path.length);
 
-    if(waveTimer <= 0) endWave();
+    // Only end wave when timer expired AND no visitors remain
+    if(waveTimer <= 0 && visitors.length === 0){
+      endWave();
+    }
   }
 }
 
@@ -477,3 +485,4 @@ loop(0);
 </script>
 </body>
 </html>
+
