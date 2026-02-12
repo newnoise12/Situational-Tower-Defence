@@ -312,16 +312,22 @@ function draw(){
    GAME LOOP
 -------------------------- */
 let last=0;
+
 function loop(t){
   const dt=(t-last)/1000;
   last=t;
   update(dt);
   draw();
-  requestAnimationFrame(loop)
+  requestAnimationFrame(loop);
+}
 
+// Build UI and start game
+buildShopUI();
+loop(0);
 </script>
 </body>
 </html>
+
 
 
 
