@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SCP Tower Defense (Classroom Prototype)</title>
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #111; color: #eee; }
+    .wrap { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
+    .panel { padding: 14px; border-right: 1px solid #333; background: #161616; }
+    .panel h1 { font-size: 16px; margin: 0 0 10px; }
+    .stat { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .card { background:#1f1f1f; border:1px solid #333; border-radius:10px; padding:10px; }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 10px;
+      border: 1px solid #333;
+      background: #232323;
+      color: #eee;
+      cursor: pointer;
+      text-align: left;
+    }
+    button:hover { background:#2a2a2a; }
+    button.active { outline: 2px solid #6cf; }
+    small { color:#aaa; display:block; line-height:1.35; }
+    canvas { display:block; width: 100%; height: 100%; background: #0f0f0f; }
+    .hint { margin-top: 10px; color:#bbb; font-size: 12px; line-height: 1.4; }
+    .row { display:flex; gap:8px; }
+    .row button { flex:1; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <h1>Situational Crime Prevention Tower Defense</h1>
+
+    <div class="stat">
+      <div class="card"><div>Money</div><div id="money" style="font-size:18px;">0</div></div>
+      <div class="card"><div>Lives</div><div id="lives" style="font-size:18px;">0</div></div>
+      <div class="card"><div>Wave</div><div id="wave" style="font-size:18px;">0</div></div>
+      <div class="card"><div>Enemies</div><div id="enemies" style="font-size:18px;">0</div></div>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom:6px;">Build a tower (then click on the grid):</div>
+
+      <button id="btn-effort">
+        🔒 Increase Effort — <b>£50</b>
+        <small>Slows offenders (harder to commit).</small>
+      </button>
+
+      <button id="btn-risk">
+        👀 Increase Risk — <b>£60</b>
+        <small>Chance to scare them off (fear of getting caught).</small>
+      </button>
+
+      <button id="btn-reward">
+        💰 Reduce Rewards — <b>£55</b>
+        <small>Reduces their “payoff”, lowering motivation faster.</small>
+      </button>
+
+      <button id="btn-provocation">
+        😤 Reduce Provocations — <b>£45</b>
+        <small>Calms hotspots; motivation drains in its area.</small>
+      </button>
+
+      <button id="btn-excuse">
+        📜 Remove Excuses — <b>£40</b>
+        <small>Clear rules: weak offences are less likely to start, and motivation drops.</small>
+      </button>
+
+      <div class="row">
+        <button id="startWave">▶ Start next wave</button>
+        <button id="cancel">✖ Cancel build</button>
+      </div>
+    </div>
+
+    <div class="hint">
+      <b>How it teaches SCP:</b><br>
+      Enemies have <i>motivation</i>. Towers reduce motivation by raising effort/risk, reducing rewards, reducing provocations, and removing excuses.<br><br>
+      <b>Win:</b> survive waves without losing all lives.
+    </div>
+  </div>
+
+  <canvas id="c"></canvas>
+</div>
+
+<script>
+(() => {
+  // --- Canvas setup ---
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * devicePixelRatio);
+    canvas.height = Math.floor(rect.height * devicePixelRatio);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // --- Grid & path ---
+  const GRID = 28;               // size of one grid square (logical px)
+  const SCALE = devicePixelRatio;
+
+  function toScreen(x, y) { return [x * SCALE, y * SCALE]; }
+  function snapToGrid(x, y) {
+    const gx = Math.floor(x / GRID) * GRID + GRID / 2;
+    const gy = Math.floor(y / GRID) * GRID + GRID / 2;
+    return [gx, gy];
+  }
+
+  // Path as a polyline (in logical coords)
+  const path = [
+    {x: GRID * 1.0,  y: GRID * 5.0},
+    {x: GRID * 10.0, y: GRID * 5.0},
+    {x: GRID * 10.0, y: GRID * 12.0},
+    {x: GRID * 20.0, y: GRID * 12.0},
+    {x: GRID * 20.0, y: GRID * 7.0},
+    {x: GRID * 26.0, y: GRID * 7.0},
+  ];
+
+  function dist(a, b) {
+    const dx = a.x - b.x, dy = a.y - b.y;
+    return Math.hypot(dx, dy);
+  }
+
+  // --- Game state ---
+  const UI = {
+    money: document.getElementById("money"),
+    lives: document.getElementById("lives"),
+    wave: document.getElementById("wave"),
+    enemies: document.getElementById("enemies"),
+  };
+
+  const TowerType = {
+    EFFORT: "effort",
+    RISK: "risk",
+    REWARD: "reward",
+    PROVOCATION: "provocation",
+    EXCUSE: "excuse",
+  };
+
+  const towerData = {
+    [TowerType.EFFORT]:      { cost: 50, range: 110, fireRate: 0.5,  slow: 0.55,  dmg: 1.5,  label: "🔒" },
+    [TowerType.RISK]:        { cost: 60, range: 120, fireRate: 0.7,  scare: 0.25, dmg: 1.0,  label: "👀" },
+    [TowerType.REWARD]:      { cost: 55, range: 115, fireRate: 0.6,  rewardCut: 2.0, dmg: 2.0, label: "💰" },
+    [TowerType.PROVOCATION]: { cost: 45, range: 135, fireRate: 0.0,  calmAura: 0.9, dmg: 0.0, label: "😤" },
+    [TowerType.EXCUSE]:      { cost: 40, range: 100, fireRate: 0.4,  excuseHit: 2.2, dmg: 1.2, label: "📜" },
+  };
+
+  const game = {
+    money: 180,
+    lives: 15,
+    wave: 0,
+    towers: [],
+    enemies: [],
+    projectiles: [],
+    building: null,     // tower type currently selected
+    waveInProgress: false,
+    spawnQueue: [],
+    time: 0,
+  };
+
+  // --- Enemy definitions ---
+  const OffenceType = {
+    VANDALISM: "vandalism",
+    SHOPLIFTING: "shoplifting",
+    TRESPASS: "trespass",
+    BIKE_THEFT: "bike_theft",
+    GRAFFITI: "graffiti",
+  };
+
+  function makeEnemy(type, wave) {
+    // Motivation is the “why do it?” score. Reduce it to make them give up.
+    // Tougher waves = higher motivation & slightly faster.
+    const base = {
+      [OffenceType.VANDALISM]:   { speed: 55, motivation: 18, reward: 7 },
+      [OffenceType.SHOPLIFTING]: { speed: 60, motivation: 20, reward: 9 },
+      [OffenceType.TRESPASS]:    { speed: 70, motivation: 14, reward: 6 },
+      [OffenceType.BIKE_THEFT]:  { speed: 58, motivation: 22, reward: 10 },
+      [OffenceType.GRAFFITI]:    { speed: 62, motivation: 16, reward: 7 },
+    }[type];
+
+    const wBoost = 1 + wave * 0.08;
+
+    return {
+      type,
+      x: path[0].x,
+      y: path[0].y,
+      seg: 0,
+      t: 0,
+      speed: base.speed * wBoost,
+      motivation: base.motivation * wBoost,
+      reward: base.reward,
+      slowedUntil: 0,
+      alive: true,
+    };
+  }
+
+  function offenceColor(type) {
+    // keep it simple; no need for specific colors in a classroom prototype
+    return "#ddd";
+  }
+
+  // --- Towers ---
+  function towerAt(x, y) {
+    return game.towers.find(t => Math.abs(t.x - x) < 1 && Math.abs(t.y - y) < 1);
+  }
+
+  function canPlaceTower(x, y) {
+    if (towerAt(x, y)) return false;
+
+    // Don't place towers on the path (simple proximity test to path segments)
+    for (let i = 0; i < path.length - 1; i++) {
+      const A = path[i], B = path[i+1];
+      const px = x, py = y;
+      const vx = B.x - A.x, vy = B.y - A.y;
+      const wx = px - A.x, wy = py - A.y;
+      const c1 = vx * wx + vy * wy;
+      const c2 = vx * vx + vy * vy;
+      const u = Math.max(0, Math.min(1, c1 / c2));
+      const cx = A.x + u * vx, cy = A.y + u * vy;
+      const d = Math.hypot(px - cx, py - cy);
+      if (d < GRID * 0.55) return false;
+    }
+    return true;
+  }
+
+  function addTower(type, x, y) {
+    const data = towerData[type];
+    if (game.money < data.cost) return;
+
+    game.money -= data.cost;
+    game.towers.push({
+      type,
+      x, y,
+      cooldown: 0,
+      level: 1,
+    });
+  }
+
+  // --- Projectiles (simple visual feedback) ---
+  function shoot(from, to, power=1) {
+    game.projectiles.push({
+      x: from.x, y: from.y,
+      tx: to.x, ty: to.y,
+      life: 0.12,
+      power
+    });
+  }
+
+  // --- UI wiring ---
+  const buttons = {
+    [TowerType.EFFORT]: document.getElementById("btn-effort"),
+    [TowerType.RISK]: document.getElementById("btn-risk"),
+    [TowerType.REWARD]: document.getElementById("btn-reward"),
+    [TowerType.PROVOCATION]: document.getElementById("btn-provocation"),
+    [TowerType.EXCUSE]: document.getElementById("btn-excuse"),
+  };
+
+  function setBuilding(typeOrNull) {
+    game.building = typeOrNull;
+    for (const [k, btn] of Object.entries(buttons)) {
+      btn.classList.toggle("active", game.building === k);
+    }
+  }
+
+  for (const [type, btn] of Object.entries(buttons)) {
+    btn.addEventListener("click", () => setBuilding(type));
+  }
+
+  document.getElementById("cancel").addEventListener("click", () => setBuilding(null));
+
+  document.getElementById("startWave").addEventListener("click", () => {
+    if (game.waveInProgress) return;
+    startWave();
+  });
+
+  canvas.addEventListener("click", (e) => {
+    if (!game.building) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left);
+    const my = (e.clientY - rect.top);
+    const x = mx; // logical coords (we scale in drawing, not input)
+    const y = my;
+
+    const [gx, gy] = snapToGrid(x, y);
+    if (!canPlaceTower(gx, gy)) return;
+    addTower(game.building, gx, gy);
+  });
+
+  // --- Wave / spawning ---
+  function startWave() {
+    game.wave++;
+    game.waveInProgress = true;
+
+    // Spawn plan: mix offences; "Remove Excuses" towers reduce minor offences chance (handled below)
+    const count = 10 + game.wave * 2;
+    const types = Object.values(OffenceType);
+
+    game.spawnQueue = [];
+    for (let i = 0; i < count; i++) {
+      const t = types[Math.floor(Math.random() * types.length)];
+      // schedule over time
+      game.spawnQueue.push({ at: game.time + i * 0.7, type: t });
+    }
+  }
+
+  function excusesSuppressionFactor() {
+    // more "Remove Excuses" towers => fewer minor offences spawn
+    const n = game.towers.filter(t => t.type === TowerType.EXCUSE).length;
+    return Math.max(0.6, 1 - n * 0.08); // down to 60%
+  }
+
+  // --- Simulation step ---
+  function update(dt) {
+    game.time += dt;
+
+    // Spawn enemies
+    if (game.waveInProgress) {
+      const factor = excusesSuppressionFactor();
+      while (game.spawnQueue.length && game.spawnQueue[0].at <= game.time) {
+        const item = game.spawnQueue.shift();
+
+        // Minor offences are more likely to be prevented by "Remove Excuses"
+        const minor = (item.type === OffenceType.TRESPASS || item.type === OffenceType.GRAFFITI);
+        if (minor && Math.random() > factor) {
+          // prevented before it starts
+          continue;
+        }
+        game.enemies.push(makeEnemy(item.type, game.wave));
+      }
+      if (game.spawnQueue.length === 0 && game.enemies.length === 0) {
+        game.waveInProgress = false;
+        game.money += 35; // small between-wave income
+      }
+    }
+
+    // Update enemies movement along path
+    for (const en of game.enemies) {
+      if (!en.alive) continue;
+
+      // Passive motivation drain from "Reduce Provocations" aura
+      for (const tw of game.towers) {
+        if (tw.type !== TowerType.PROVOCATION) continue;
+        const data = towerData[tw.type];
+        const d = Math.hypot(en.x - tw.x, en.y - tw.y);
+        if (d <= data.range) {
+          // calmAura drains motivation per second
+          en.motivation -= (data.calmAura * dt);
+        }
+      }
+
+      // Give up if motivation too low (offender leaves)
+      if (en.motivation <= 0) {
+        en.alive = false;
+        game.money += 3; // small reward for prevention
+        continue;
+      }
+
+      // Move along segment
+      const A = path[en.seg];
+      const B = path[en.seg + 1];
+      if (!B) {
+        // reached end -> "harm" happened
+        en.alive = false;
+        game.lives -= 1;
+        continue;
+      }
+
+      const segLen = dist(A, B);
+      const dirx = (B.x - A.x) / segLen;
+      const diry = (B.y - A.y) / segLen;
+
+      let speed = en.speed;
+      if (en.slowedUntil > game.time) speed *= 0.6;
+
+      en.t += (speed * dt) / segLen;
+      while (en.t >= 1 && en.seg < path.length - 2) {
+        en.t -= 1;
+        en.seg += 1;
+      }
+
+      const C = path[en.seg];
+      const D = path[en.seg + 1];
+      const l = dist(C, D);
+      const ux = (D.x - C.x) / l;
+      const uy = (D.y - C.y) / l;
+      en.x = C.x + ux * l * en.t;
+      en.y = C.y + uy * l * en.t;
+    }
+
+    // Remove dead enemies
+    game.enemies = game.enemies.filter(e => e.alive);
+
+    // Towers act
+    for (const tw of game.towers) {
+      const data = towerData[tw.type];
+      if (tw.cooldown > 0) tw.cooldown -= dt;
+
+      // Aura tower doesn't shoot
+      if (tw.type === TowerType.PROVOCATION) continue;
+
+      if (tw.cooldown <= 0) {
+        // find nearest target in range
+        let target = null;
+        let best = Infinity;
+        for (const en of game.enemies) {
+          const d = Math.hypot(en.x - tw.x, en.y - tw.y);
+          if (d <= data.range && d < best) {
+            best = d;
+            target = en;
+          }
+        }
+        if (target) {
+          // Apply SCP-specific effects
+          if (tw.type === TowerType.EFFORT) {
+            target.slowedUntil = Math.max(target.slowedUntil, game.time + 0.8);
+            target.motivation -= data.dmg;
+          }
+          if (tw.type === TowerType.RISK) {
+            target.motivation -= data.dmg;
+            if (Math.random() < data.scare) {
+              // scared off
+              target.motivation = -1;
+            }
+          }
+          if (tw.type === TowerType.REWARD) {
+            // "reduce reward" -> motivation drops more
+            target.motivation -= (data.dmg + data.rewardCut);
+          }
+          if (tw.type === TowerType.EXCUSE) {
+            // remove excuses -> stronger effect on minor offences
+            const minor = (target.type === OffenceType.TRESPASS || target.type === OffenceType.GRAFFITI);
+            target.motivation -= data.dmg + (minor ? data.excuseHit : 0.6);
+          }
+
+          shoot(tw, target, 1);
+          tw.cooldown = 1 / data.fireRate;
+        }
+      }
+    }
+
+    // Projectiles
+    for (const p of game.projectiles) p.life -= dt;
+    game.projectiles = game.projectiles.filter(p => p.life > 0);
+
+    // Lose condition
+    if (game.lives <= 0) {
+      game.lives = 0;
+      game.waveInProgress = false;
+      game.spawnQueue = [];
+    }
+  }
+
+  // --- Drawing ---
+  function draw() {
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.scale(SCALE, SCALE);
+
+    // Grid
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = "#2a2a2a";
+    for (let x = 0; x < canvas.width / SCALE; x += GRID) {
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, canvas.height / SCALE); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height / SCALE; y += GRID) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width / SCALE, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Path
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = "#3a3a3a";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+    ctx.stroke();
+
+    // Towers
+    for (const tw of game.towers) {
+      const data = towerData[tw.type];
+
+      // range ring
+      ctx.globalAlpha = 0.12;
+      ctx.beginPath();
+      ctx.arc(tw.x, tw.y, data.range, 0, Math.PI * 2);
+      ctx.fillStyle = "#8cf";
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // base
+      ctx.fillStyle = "#222";
+      ctx.strokeStyle = "#555";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(tw.x - 14, tw.y - 14, 28, 28, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // label
+      ctx.font = "16px system-ui";
+      ctx.fillStyle = "#eee";
+      ctx.fillText(data.label, tw.x - 8, tw.y + 6);
+    }
+
+    // Enemies
+    for (const en of game.enemies) {
+      ctx.fillStyle = offenceColor(en.type);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.arc(en.x, en.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // motivation bar
+      const maxMot = 30;
+      const w = 24, h = 5;
+      const pct = Math.max(0, Math.min(1, en.motivation / maxMot));
+      ctx.fillStyle = "#111";
+      ctx.fillRect(en.x - w/2, en.y - 18, w, h);
+      ctx.fillStyle = "#eee";
+      ctx.fillRect(en.x - w/2, en.y - 18, w * pct, h);
+    }
+
+    // Projectiles (simple lines)
+    ctx.strokeStyle = "#9ef";
+    ctx.lineWidth = 2;
+    for (const p of game.projectiles) {
+      ctx.globalAlpha = Math.max(0, p.life / 0.12);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.tx, p.ty);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // If game over
+    if (game.lives <= 0) {
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(0,0,canvas.width/SCALE, canvas.height/SCALE);
+      ctx.fillStyle = "#fff";
+      ctx.font = "28px system-ui";
+      ctx.fillText("Game Over", 40, 80);
+      ctx.font = "14px system-ui";
+      ctx.fillText("Refresh the page to restart.", 40, 110);
+    }
+  }
+
+  // --- UI update ---
+  function updateUI() {
+    UI.money.textContent = "£" + game.money;
+    UI.lives.textContent = game.lives;
+    UI.wave.textContent = game.wave;
+    UI.enemies.textContent = game.enemies.length + (game.waveInProgress ? " (in wave)" : "");
+  }
+
+  // --- Main loop ---
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+
+    update(dt);
+    draw();
+    updateUI();
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
