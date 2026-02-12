@@ -38,10 +38,22 @@ const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+canvas.addEventListener("click", function(e){
+  if(!placingGuard) return;
 
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  guards.push({x:x, y:y, radius:130});
+  money -= 150;
+  placingGuard = false;
+});
+
+  
 let money = 600;
 let reputation = 50;
-
+let placingGuard = false;
 const path = [
   {x:200,y:200},{x:900,y:200},
   {x:900,y:700},{x:200,y:700}
@@ -107,9 +119,8 @@ function upgradeShop(i,type){
 }
 
 function addGuard(){
-  if(money<150)return;
-  money-=150;
-  guards.push({x:550,y:450,radius:180});
+  if(money < 150) return;
+  placingGuard = true;
 }
 
 function update(dt){
@@ -119,6 +130,7 @@ function update(dt){
     moveVisitor(v,dt);
     applySecurity(v);
     checkShops(v);
+    money -= guards.length * 0.5 * dt;
   });
 
   visitors.filter(v=>v.pathIndex<path.length);
@@ -136,10 +148,14 @@ function moveVisitor(v,dt){
 }
 
 function applySecurity(v){
-  v.R=0;
+  v.R = 0;
+
   guards.forEach(g=>{
-    const d=Math.hypot(v.x-g.x,v.y-g.y);
-    if(d<g.radius)v.R+=15;
+    const d = Math.hypot(v.x-g.x, v.y-g.y);
+    if(d < g.radius){
+      v.R += 15;
+      v.S -= 5;  // comfort penalty
+    }
   });
 }
 
@@ -187,11 +203,15 @@ function draw(){
     ctx.fillText(shop.name,shop.x-40,shop.y);
   });
 
-  guards.forEach(g=>{
-    ctx.strokeStyle="rgba(0,200,255,0.4)";
-    ctx.beginPath();ctx.arc(g.x,g.y,g.radius,0,Math.PI*2);ctx.stroke();
-    ctx.fillStyle="#0ff";ctx.fillRect(g.x-5,g.y-5,10,10);
-  });
+ guards.forEach(g=>{
+  ctx.strokeStyle="rgba(0,200,255,0.3)";
+  ctx.beginPath();
+  ctx.arc(g.x,g.y,g.radius,0,Math.PI*2);
+  ctx.stroke();
+
+  ctx.fillStyle="#0ff";
+  ctx.fillRect(g.x-6,g.y-6,12,12);
+});
 
   visitors.forEach(v=>{
     ctx.fillStyle=v.type==="ordinary"?"#0f0":v.type==="opportunist"?"#ff0":"#f00";
@@ -215,3 +235,4 @@ loop(0);
 </script>
 </body>
 </html>
+
