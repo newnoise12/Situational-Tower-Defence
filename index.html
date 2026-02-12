@@ -4,17 +4,39 @@
 <meta charset="utf-8">
 <title>Mall Manager – Multi Shop</title>
 <style>
-body { margin:0; background:#111; color:#eee; font-family:Arial; }
-#ui {
-  position:absolute; left:10px; top:10px;
-  background:#1b1b1b; padding:12px;
-  border-radius:10px; border:1px solid #333;
-  width:280px;
+body {
+  margin:0;
+  background:#111;
+  color:#eee;
+  font-family:Arial;
+  display:flex;
 }
-button { width:100%; margin-top:6px; padding:6px; }
-canvas { display:block; }
+
+#game {
+  flex:1;
+  display:block;
+}
+
+#ui {
+  width:300px;
+  background:#1b1b1b;
+  border-left:1px solid #333;
+  padding:12px;
+  overflow-y:auto;
+}
+
+button {
+  width:100%;
+  margin-top:6px;
+  padding:6px;
+}
+
 .stat { margin:4px 0; }
-.shopBlock { margin-top:8px; border-top:1px solid #333; padding-top:6px; }
+.shopBlock {
+  margin-top:8px;
+  border-top:1px solid #333;
+  padding-top:6px;
+}
 </style>
 </head>
 <body>
@@ -235,4 +257,5 @@ loop(0);
 </script>
 </body>
 </html>
+
 
