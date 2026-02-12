@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Mall Manager – Multi Shop</title>
+<title>Mall Manager – Phase 3</title>
 <style>
 body {
   margin:0;
@@ -12,13 +12,10 @@ body {
   display:flex;
 }
 
-#game {
-  flex:1;
-  display:block;
-}
+#game { flex:1; display:block; }
 
 #ui {
-  width:300px;
+  width:320px;
   background:#1b1b1b;
   border-left:1px solid #333;
   padding:12px;
@@ -33,10 +30,11 @@ button {
 
 .stat { margin:4px 0; }
 .shopBlock {
-  margin-top:8px;
+  margin-top:12px;
   border-top:1px solid #333;
-  padding-top:6px;
+  padding-top:8px;
 }
+.small { font-size:12px; color:#aaa; }
 </style>
 </head>
 <body>
@@ -52,11 +50,11 @@ button {
   <button onclick="startWave()">Start Wave</button>
 
   <hr>
+  <b>Global Surveillance</b>
+  <div id="cctvPanel"></div>
+  <button onclick="addGuard()">Place Guard (£150)</button>
 
   <div id="shopControls"></div>
-
-  <hr>
-  <button onclick="addGuard()">Add Guard (£150)</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -65,46 +63,214 @@ button {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-/* -------------------------
-   CANVAS RESIZING
--------------------------- */
 function resizeCanvas(){
-  canvas.width = window.innerWidth - 300;
+  canvas.width = window.innerWidth - 320;
   canvas.height = window.innerHeight;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-/* -------------------------
+/* ======================
    GAME STATE
--------------------------- */
+====================== */
 let money = 600;
 let reputation = 50;
 let placingGuard = false;
 
-let gamePhase = "planning"; // planning | wave
+let gamePhase = "planning";
 let waveTimer = 0;
 let waveLength = 30;
 let waveNumber = 1;
+
+let cctvLevel = 0;
+const maxLevel = 4;
 
 const path = [
   {x:200,y:200},{x:900,y:200},
   {x:900,y:700},{x:200,y:700}
 ];
 
+/* ======================
+   UPGRADE DATA
+====================== */
+
+const managementLevels = [
+  "Basic Layout",
+  "Clear Anti-Theft Signage",
+  "Improved Lighting",
+  "Staff Training",
+  "Active Customer Engagement"
+];
+
+const cctvLevels = [
+  "No CCTV",
+  "Visible Cameras",
+  "Monitored Cameras",
+  "AI Detection System",
+  "Integrated Security Network"
+];
+
+const protectionLevels = {
+  Electronics:[
+    "Open Display Tables",
+    "Security Tags",
+    "Locked Cabinets",
+    "Staff-Assisted Sales",
+    "Smart Anti-Theft System"
+  ],
+  Jewellery:[
+    "Open Counter",
+    "Glass Display Case",
+    "Locked Case",
+    "Staff-Controlled Viewing",
+    "Secure Vault Storage"
+  ],
+  Clothing:[
+    "Open Racks",
+    "Security Tags",
+    "Fitting Room Monitoring",
+    "Item Check System",
+    "Controlled Entry System"
+  ],
+  "Food Court":[
+    "Open Counter Service",
+    "Staff Supervision",
+    "Queue Management",
+    "Controlled Payment Area",
+    "Cashless Payment Only"
+  ]
+};
+
+/* ======================
+   SHOPS
+====================== */
+
 const shops = [
-  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,hardening:0,signage:0,environment:0},
-  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,hardening:0,signage:0,environment:0},
-  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,hardening:0,signage:0,environment:0},
-  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,hardening:0,signage:0,environment:0}
+  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0},
+  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0},
+  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0},
+  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0}
 ];
 
 const guards = [];
 let visitors = [];
 
-/* -------------------------
+/* ======================
+   COST CALC
+====================== */
+function upgradeCost(base, level){
+  return base * (level + 1);
+}
+
+/* ======================
+   UI BUILDERS
+====================== */
+
+function buildShopUI(){
+  const container = document.getElementById("shopControls");
+  container.innerHTML = "";
+
+  shops.forEach((shop,i)=>{
+
+    const protectionText = protectionLevels[shop.name][shop.protection];
+    const managementText = managementLevels[shop.management];
+
+    const protectionCost = shop.protection < maxLevel ?
+      upgradeCost(100, shop.protection) : null;
+
+    const managementCost = shop.management < maxLevel ?
+      upgradeCost(80, shop.management) : null;
+
+    const div = document.createElement("div");
+    div.className="shopBlock";
+    div.innerHTML = `
+      <b>${shop.name}</b>
+
+      <div class="small">
+        Product Protection: Level ${shop.protection}<br>
+        ${protectionText}
+      </div>
+      ${shop.protection < maxLevel ?
+        `<button onclick="upgradeProtection(${i})">
+          Upgrade Protection (£${protectionCost})
+        </button>` : "<div class='small'>Max Level</div>"}
+
+      <div class="small">
+        Store Management: Level ${shop.management}<br>
+        ${managementText}
+      </div>
+      ${shop.management < maxLevel ?
+        `<button onclick="upgradeManagement(${i})">
+          Upgrade Management (£${managementCost})
+        </button>` : "<div class='small'>Max Level</div>"}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function buildCCTVUI(){
+  const panel = document.getElementById("cctvPanel");
+  const text = cctvLevels[cctvLevel];
+  const cost = cctvLevel < maxLevel ?
+    upgradeCost(120, cctvLevel) : null;
+
+  panel.innerHTML = `
+    <div class="small">
+      CCTV Level ${cctvLevel}<br>
+      ${text}
+    </div>
+    ${cctvLevel < maxLevel ?
+      `<button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>`
+      : "<div class='small'>Max Level</div>"}
+  `;
+}
+
+/* ======================
+   UPGRADES
+====================== */
+
+function upgradeProtection(i){
+  if(gamePhase !== "planning") return;
+  const shop = shops[i];
+  if(shop.protection >= maxLevel) return;
+
+  const cost = upgradeCost(100, shop.protection);
+  if(money < cost) return;
+
+  money -= cost;
+  shop.protection++;
+  buildShopUI();
+}
+
+function upgradeManagement(i){
+  if(gamePhase !== "planning") return;
+  const shop = shops[i];
+  if(shop.management >= maxLevel) return;
+
+  const cost = upgradeCost(80, shop.management);
+  if(money < cost) return;
+
+  money -= cost;
+  shop.management++;
+  buildShopUI();
+}
+
+function upgradeCCTV(){
+  if(gamePhase !== "planning") return;
+  if(cctvLevel >= maxLevel) return;
+
+  const cost = upgradeCost(120, cctvLevel);
+  if(money < cost) return;
+
+  money -= cost;
+  cctvLevel++;
+  buildCCTVUI();
+}
+
+/* ======================
    PHASE CONTROL
--------------------------- */
+====================== */
+
 function startWave(){
   if(gamePhase !== "planning") return;
   gamePhase = "wave";
@@ -118,17 +284,20 @@ function endWave(){
   visitors = [];
 }
 
-/* -------------------------
-   GUARD PLACEMENT
--------------------------- */
+/* ======================
+   GUARDS
+====================== */
+
 canvas.addEventListener("click", function(e){
   if(!placingGuard || gamePhase !== "planning") return;
 
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  guards.push({
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+    radius:130
+  });
 
-  guards.push({x:x, y:y, radius:130});
   money -= 150;
   placingGuard = false;
 });
@@ -139,54 +308,19 @@ function addGuard(){
   placingGuard = true;
 }
 
-/* -------------------------
-   SHOP UI
--------------------------- */
-function buildShopUI(){
-  const container = document.getElementById("shopControls");
-  container.innerHTML = "";
-  shops.forEach((shop,i)=>{
-    const div = document.createElement("div");
-    div.className="shopBlock";
-    div.innerHTML = `
-      <b>${shop.name}</b><br>
-      <button onclick="upgradeShop(${i},'hardening')">+ Hardening (£100)</button>
-      <button onclick="upgradeShop(${i},'signage')">+ Signage (£80)</button>
-      <button onclick="upgradeShop(${i},'environment')">+ Environment (£80)</button>
-    `;
-    container.appendChild(div);
-  });
-}
+/* ======================
+   VISITOR LOGIC
+====================== */
 
-function upgradeShop(i,type){
-  if(gamePhase !== "planning") return;
-  const shop=shops[i];
-  const cost=100;
-  if(money<cost)return;
-  money-=cost;
-  shop[type]++;
-}
-
-/* -------------------------
-   VISITOR SPAWNING
--------------------------- */
 function spawnVisitor(){
-  const roll=Math.random();
-  let type;
-
-  if(reputation>70)
-    type=roll<0.7?"ordinary":roll<0.95?"opportunist":"determined";
-  else if(reputation<30)
-    type=roll<0.3?"ordinary":roll<0.7?"opportunist":"determined";
-  else
-    type=roll<0.5?"ordinary":roll<0.85?"opportunist":"determined";
-
   const profiles={
-    ordinary:{M:10,S:40,risk:1.5,effort:1.2,excuse:1.5},
-    opportunist:{M:25,S:25,risk:1.0,effort:1.0,excuse:1.0},
-    determined:{M:40,S:10,risk:0.5,effort:1.5,excuse:0.5}
+    ordinary:{M:10,S:40,risk:1.5,effort:1.2},
+    opportunist:{M:25,S:25,risk:1.0,effort:1.0},
+    determined:{M:40,S:10,risk:0.5,effort:1.5}
   };
 
+  const types=["ordinary","opportunist","determined"];
+  const type=types[Math.floor(Math.random()*3)];
   const p=profiles[type];
 
   visitors.push({
@@ -201,14 +335,14 @@ function spawnVisitor(){
     R:0,
     riskSensitivity:p.risk,
     effortSensitivity:p.effort,
-    excuseSensitivity:p.excuse,
     attempted:false
   });
 }
 
-/* -------------------------
-   UPDATE LOOP
--------------------------- */
+/* ======================
+   UPDATE
+====================== */
+
 function update(dt){
 
   if(gamePhase === "wave"){
@@ -227,41 +361,28 @@ function update(dt){
 
     visitors = visitors.filter(v => v.pathIndex < path.length);
 
-    if(waveTimer <= 0){
-      endWave();
-    }
-
-  } else {
-    visitors = [];
+    if(waveTimer <= 0) endWave();
   }
 }
 
-/* -------------------------
-   MOVEMENT
--------------------------- */
 function moveVisitor(v,dt){
   const next=path[(v.pathIndex+1)%path.length];
   const dx=next.x-v.x,dy=next.y-v.y;
   const dist=Math.hypot(dx,dy);
 
-  if(dist<2){
-    v.pathIndex++;
-  } else {
+  if(dist<2) v.pathIndex++;
+  else{
     v.x+=dx/dist*v.speed*dt;
     v.y+=dy/dist*v.speed*dt;
   }
 }
 
-/* -------------------------
-   SECURITY
--------------------------- */
 function applySecurity(v){
-  v.R = 0;
+  v.R = cctvLevel * 5;
   v.S = v.baseS;
 
   guards.forEach(g=>{
-    const d = Math.hypot(v.x-g.x, v.y-g.y);
-    if(d < g.radius){
+    if(Math.hypot(v.x-g.x,v.y-g.y)<g.radius){
       v.R += 15;
       v.S -= 5;
     }
@@ -270,22 +391,14 @@ function applySecurity(v){
   v.S = Math.max(0, v.S);
 }
 
-/* -------------------------
-   SHOP INTERACTION
--------------------------- */
 function checkShops(v){
   if(v.attempted) return;
 
   shops.forEach(shop=>{
     if(Math.hypot(v.x-shop.x,v.y-shop.y)<60){
 
-      v.O = shop.baseOpportunity - shop.hardening*5*v.effortSensitivity;
-      v.M -= shop.environment*1;
-      v.M -= shop.signage*3*v.excuseSensitivity;
-
-      if(shop.name==="Food Court"){
-        v.S += 10;
-      }
+      v.O = shop.baseOpportunity - shop.protection*5*v.effortSensitivity;
+      v.M -= shop.management*2;
 
       const theftScore = v.M + v.O - (v.R*v.riskSensitivity);
 
@@ -303,9 +416,10 @@ function checkShops(v){
   });
 }
 
-/* -------------------------
+/* ======================
    DRAW
--------------------------- */
+====================== */
+
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -348,11 +462,7 @@ function draw(){
     gamePhase === "planning" ? "Planning" : "Wave Active";
 }
 
-/* -------------------------
-   GAME LOOP
--------------------------- */
 let last=0;
-
 function loop(t){
   const dt=(t-last)/1000;
   last=t;
@@ -362,6 +472,7 @@ function loop(t){
 }
 
 buildShopUI();
+buildCCTVUI();
 loop(0);
 </script>
 </body>
