@@ -10,17 +10,35 @@ body{
   background:#111;
   color:#eee;
   font-family:Arial;
+
   display:flex;
+  height:100vh;   /* important */
 }
 
-/* LEFT UI PANEL */
+/* LEFT PANEL */
 #ui{
-  width:320px;
+  flex:0 0 280px;   /* fixed width */
   background:#1b1b1b;
   border-right:1px solid #333;
   padding:12px;
   overflow-y:auto;
 }
+
+/* CENTER CANVAS */
+#game{
+  flex:1;           /* takes remaining space */
+  display:block;
+}
+
+/* RIGHT PANEL */
+#analyticsBox{
+  flex:0 0 240px;   /* fixed width */
+  background:#1a1a1a;
+  border-left:1px solid #333;
+  padding:12px;
+  overflow-y:auto;
+}
+
 
 /* CENTER CANVAS */
 #game{
@@ -92,9 +110,12 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas(){
-  // subtract left UI (320) + right analytics (260)
-  canvas.width = window.innerWidth - 320 - 260;
-  canvas.height = window.innerHeight;
+
+  const rect = canvas.getBoundingClientRect();
+
+  // Match drawing buffer to actual displayed size
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -755,5 +776,6 @@ loop(0);
 
 </body>
 </html>
+
 
 
