@@ -259,6 +259,7 @@ function buildShopUI(){
 
     const div = document.createElement("div");
     div.className="shopBlock";
+
     div.innerHTML = `
       <b>${shop.name}</b>
 
@@ -266,29 +267,41 @@ function buildShopUI(){
         Product Protection: Level ${shop.protection}<br>
         ${protectionText}
       </div>
-      ${shop.protection < maxLevel ?
-        <button onclick="upgradeProtection(${i})">
-  Upgrade Protection (£${protectionCost})
-</button>
-<button onclick="toggleInfo('protection','info_p_${i}')">ℹ</button>
-<div id="info_p_${i}"></div>
- : "<div class='small'>Max Level</div>"}
+
+      ${
+        shop.protection < maxLevel
+        ? `
+          <button onclick="upgradeProtection(${i})">
+            Upgrade Protection (£${protectionCost})
+          </button>
+          <button onclick="toggleInfo('protection','info_p_${i}')">ℹ</button>
+          <div id="info_p_${i}"></div>
+        `
+        : "<div class='small'>Max Level</div>"
+      }
 
       <div class="small">
         Store Management: Level ${shop.management}<br>
         ${managementText}
       </div>
-      ${shop.management < maxLevel ?
-        <button onclick="upgradeManagement(${i})">
-  Upgrade Management (£${managementCost})
-</button>
-<button onclick="toggleInfo('management','info_m_${i}')">ℹ</button>
-<div id="info_m_${i}"></div> : "<div class='small'>Max Level</div>"}
+
+      ${
+        shop.management < maxLevel
+        ? `
+          <button onclick="upgradeManagement(${i})">
+            Upgrade Management (£${managementCost})
+          </button>
+          <button onclick="toggleInfo('management','info_m_${i}')">ℹ</button>
+          <div id="info_m_${i}"></div>
+        `
+        : "<div class='small'>Max Level</div>"
+      }
 
       <div class="small">
         Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
       </div>
     `;
+
     container.appendChild(div);
   });
 }
@@ -304,10 +317,16 @@ function buildCCTVUI(){
       CCTV Level ${cctvLevel}<br>
       ${text}
     </div>
-    ${cctvLevel < maxLevel ?
-      <button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>
-<button onclick="toggleInfo('cctv','info_cctv')">ℹ</button>
-<div id="info_cctv"></div>: "<div class='small'>Max Level</div>"}
+
+    ${
+      cctvLevel < maxLevel
+      ? `
+        <button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>
+        <button onclick="toggleInfo('cctv','info_cctv')">ℹ</button>
+        <div id="info_cctv"></div>
+      `
+      : "<div class='small'>Max Level</div>"
+    }
   `;
 }
 
@@ -736,4 +755,5 @@ loop(0);
 
 </body>
 </html>
+
 
