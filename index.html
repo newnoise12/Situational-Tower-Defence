@@ -565,7 +565,9 @@ function spawnVisitor(){
   const p = profiles[type];
 
   visitors.push({
-    x:200, y:200,
+    x: path[0].x,
+    y: path[0].y,
+
     pathIndex:0,
     speed:60,
     type:type,
@@ -804,6 +806,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
