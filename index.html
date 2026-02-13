@@ -17,8 +17,19 @@ body{
 }
 
 /* LEFT PANEL */
-#ui { overflow: hidden; display:flex; flex-direction:column; }
-#shopControls { overflow-y:auto; flex:1; }
+#ui {
+  flex:0 0 280px;
+  background:#1b1b1b;
+  border-right:1px solid #333;
+  padding:12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+#shopControls {
+  overflow-y:auto;
+  flex:1;
 }
 
 /* CENTER CANVAS */
@@ -113,6 +124,12 @@ function updatePath(){
     { x: margin,       y: margin }         // Exit back to entrance
   ];
 }
+  const shops = [
+  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
+  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
+  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
+  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
+];
 
 function layoutShops(){
   // keep them positioned relative to the current canvas size
@@ -158,24 +175,6 @@ let waveNumber = 1;
 
 let cctvLevel = 0;
 const maxLevel = 4;
-
-let path = [];
-
-function updatePath(){
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const margin = 120;
-
-  path = [
-    { x: margin, y: margin },               // Entrance
-    { x: w - margin, y: margin },
-    { x: w - margin, y: h - margin },
-    { x: margin, y: h - margin },
-    { x: margin, y: margin }                // Exit
-  ];
-}
-updatePath();
 
 /* ======================
    WAVE STATS (ANALYTICS)
@@ -242,12 +241,6 @@ const protectionLevels = {
 /* ======================
    SHOPS
 ====================== */
-const shops = [
-  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
-  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
-  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
-  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
-];
 
 
 const guards = [];
@@ -811,6 +804,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
