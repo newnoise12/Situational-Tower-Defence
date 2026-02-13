@@ -322,10 +322,10 @@ function spawnVisitor(){
   const r = Math.random();
 
   if(waveNumber === 1){
-    // Mild pressure introduction
-    type = r < 0.70 ? "ordinary"
-         : r < 0.95 ? "opportunist"
-         : "determined";
+  type = r < 0.60 ? "ordinary"
+       : r < 0.90 ? "opportunist"
+       : "determined";
+}
   }
   else if(waveNumber === 2){
     type = r < 0.55 ? "ordinary"
@@ -556,6 +556,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
