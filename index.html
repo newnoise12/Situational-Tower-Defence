@@ -467,9 +467,14 @@ function checkShops(v){
         }
       }
       else if(v.S > v.M){
-        money += shop.value;
-        reputation += 1;
-      }
+
+  // Mall only earns percentage of shop sales
+  const mallShare = shop.value * 0.30;
+  money += mallShare;
+
+  reputation += 1;
+}
+
     }
   });
 }
@@ -538,3 +543,4 @@ loop(0);
 </script>
 </body>
 </html>
+
