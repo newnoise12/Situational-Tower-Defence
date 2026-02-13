@@ -12,12 +12,13 @@ body{
   font-family:Arial;
 
   display:flex;
-  height:100vh;   /* important */
+  height:100vh;
+  overflow:hidden;   /* prevents scroll + layout break */
 }
 
 /* LEFT PANEL */
 #ui{
-  flex:0 0 280px;   /* fixed width */
+  flex:0 0 280px;
   background:#1b1b1b;
   border-right:1px solid #333;
   padding:12px;
@@ -26,35 +27,22 @@ body{
 
 /* CENTER CANVAS */
 #game{
-  flex:1;           /* takes remaining space */
-  display:block;
+  flex:1;
+  background:#111;
 }
 
 /* RIGHT PANEL */
 #analyticsBox{
-  flex:0 0 240px;   /* fixed width */
+  flex:0 0 240px;
   background:#1a1a1a;
   border-left:1px solid #333;
   padding:12px;
   overflow-y:auto;
 }
 
-
-/* CENTER CANVAS */
-#game{
-  flex:1;
-  display:block;
+#analyticsBox h3{
+  margin:0 0 8px 0;
 }
-
-/* RIGHT ANALYTICS PANEL */
-#analyticsBox{
-  width:260px;
-  background:#1a1a1a;
-  border-left:1px solid #333;
-  padding:12px;
-  overflow-y:auto;
-}
-#analyticsBox h3{ margin:0 0 8px 0; }
 
 button{
   width:100%;
@@ -63,15 +51,19 @@ button{
 }
 
 .stat{ margin:4px 0; }
+
 .shopBlock{
   margin-top:12px;
   border-top:1px solid #333;
   padding-top:8px;
 }
-.small{ font-size:12px; color:#aaa; }
+
+.small{
+  font-size:12px;
+  color:#aaa;
+}
 </style>
 </head>
-
 <body>
 
 <!-- LEFT PANEL -->
@@ -776,6 +768,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
