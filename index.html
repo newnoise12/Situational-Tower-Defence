@@ -102,12 +102,11 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas(){
-
   const rect = canvas.getBoundingClientRect();
-
-  // Match drawing buffer to actual displayed size
   canvas.width = rect.width;
   canvas.height = rect.height;
+
+  updatePath();   // 👈 important
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -127,13 +126,23 @@ let waveNumber = 1;
 let cctvLevel = 0;
 const maxLevel = 4;
 
-const path = [
-  {x:200,y:200},  // Entrance
-  {x:900,y:200},
-  {x:900,y:700},
-  {x:200,y:700},
-  {x:200,y:200}   // Exit (back to entrance)
-];
+let path = [];
+
+function updatePath(){
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const margin = 120;
+
+  path = [
+    { x: margin, y: margin },               // Entrance
+    { x: w - margin, y: margin },
+    { x: w - margin, y: h - margin },
+    { x: margin, y: h - margin },
+    { x: margin, y: margin }                // Exit
+  ];
+}
+updatePath();
 
 /* ======================
    WAVE STATS (ANALYTICS)
@@ -768,6 +777,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
