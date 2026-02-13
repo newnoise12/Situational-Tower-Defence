@@ -712,9 +712,9 @@ function checkShops(v){
    DRAW
 ====================== */
 function draw(){
- ctx.save();
+ctx.save();
 ctx.setTransform(1, 0, 0, 1, 0, 0);
-ctx.clearRect(0, 0, worldW, worldH);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
 ctx.restore();
 
   // path
@@ -820,6 +820,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
