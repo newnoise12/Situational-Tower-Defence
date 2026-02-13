@@ -418,16 +418,27 @@ function update(dt){
 }
 
 function moveVisitor(v,dt){
-  const next=path[(v.pathIndex+1)%path.length];
-  const dx=next.x-v.x,dy=next.y-v.y;
-  const dist=Math.hypot(dx,dy);
 
-  if(dist<2) v.pathIndex++;
+  // If at final node, mark as finished
+  if(v.pathIndex >= path.length - 1){
+    v.pathIndex = path.length; // mark complete
+    return;
+  }
+
+  const next = path[v.pathIndex + 1];
+  const dx = next.x - v.x;
+  const dy = next.y - v.y;
+  const dist = Math.hypot(dx,dy);
+
+  if(dist < 2){
+    v.pathIndex++;
+  }
   else{
-    v.x+=dx/dist*v.speed*dt;
-    v.y+=dy/dist*v.speed*dt;
+    v.x += dx/dist * v.speed * dt;
+    v.y += dy/dist * v.speed * dt;
   }
 }
+
 
 function applySecurity(v){
   v.R = cctvLevel * 5;
@@ -543,4 +554,5 @@ loop(0);
 </script>
 </body>
 </html>
+
 
