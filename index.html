@@ -419,9 +419,9 @@ function update(dt){
 
 function moveVisitor(v,dt){
 
-  // If at final node, mark as finished
+  // If reached final node, mark complete
   if(v.pathIndex >= path.length - 1){
-    v.pathIndex = path.length; // mark complete
+    v.pathIndex = path.length;
     return;
   }
 
@@ -554,5 +554,6 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
