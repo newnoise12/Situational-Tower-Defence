@@ -124,8 +124,9 @@ const shops = [
 ];
 
 function updatePath(){
-  // Stroke-safe inset so the corridor doesn't get clipped at the edges
-  const inset = margin + (corridorWidth * 0.5);
+  // Add extra padding to ensure the stroke doesn't get clipped
+  const strokePadding = 10;
+  const inset = margin + (corridorWidth * 0.5) + strokePadding;
 
   path = [
     { x: inset,         y: inset },
@@ -138,7 +139,8 @@ function updatePath(){
 
 
 function layoutShops(){
-  const inset = margin + (corridorWidth * 0.5);
+  const strokePadding = 10;
+  const inset = margin + (corridorWidth * 0.5) + strokePadding;
 
   shops[0].x = worldW * 0.50; shops[0].y = inset;          // top middle
   shops[1].x = worldW - inset; shops[1].y = worldH * 0.50; // right middle
@@ -160,7 +162,7 @@ function resizeCanvas(){
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  margin = Math.min(worldW, worldH) * 0.10;
+  margin = Math.min(worldW, worldH) * 0.12;
   corridorWidth = Math.min(worldW, worldH) * 0.05;
 
   updatePath();
@@ -820,26 +822,3 @@ loop(0);
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
