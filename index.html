@@ -90,25 +90,75 @@ let waveNumber = 1;
 let cctvLevel = 0;
 const maxLevel = 4;
 
-/* ======================
-   WAVE STATS
-====================== */
-let waveStats = {
-  grossSales:0,
-  mallIncome:0,
-  theftLoss:0,
-  theftCount:0,
-  offenderSet:new Set(),
-  salaryPaid:0
-};
-
 const path = [
-  {x:200,y:200},
+  {x:200,y:200},  // Entrance
   {x:900,y:200},
   {x:900,y:700},
   {x:200,y:700},
-  {x:200,y:200}
+  {x:200,y:200}   // Exit (back to entrance)
 ];
+
+/* ======================
+   WAVE STATS (ANALYTICS)
+====================== */
+let waveStats = {
+  grossSales: 0,
+  mallIncome: 0,
+  theftLoss: 0,
+  theftCount: 0,
+  offenderSet: new Set(),
+  salaryPaid: 0
+};
+
+/* ======================
+   UPGRADE DATA
+====================== */
+const managementLevels = [
+  "Basic Layout",
+  "Clear Anti-Theft Signage",
+  "Improved Lighting",
+  "Staff Training",
+  "Active Customer Engagement"
+];
+
+const cctvLevels = [
+  "No CCTV",
+  "Visible Cameras",
+  "Monitored Cameras",
+  "AI Detection System",
+  "Integrated Security Network"
+];
+
+const protectionLevels = {
+  Electronics:[
+    "Open Display Tables",
+    "Security Tags",
+    "Locked Cabinets",
+    "Staff-Assisted Sales",
+    "Smart Anti-Theft System"
+  ],
+  Jewellery:[
+    "Open Counter",
+    "Glass Display Case",
+    "Locked Case",
+    "Staff-Controlled Viewing",
+    "Secure Vault Storage"
+  ],
+  Clothing:[
+    "Open Racks",
+    "Security Tags",
+    "Fitting Room Monitoring",
+    "Item Check System",
+    "Controlled Entry System"
+  ],
+  "Food Court":[
+    "Open Counter Service",
+    "Staff Supervision",
+    "Queue Management",
+    "Controlled Payment Area",
+    "Cashless Payment Only"
+  ]
+};
 
 /* ======================
    SHOPS
@@ -124,11 +174,141 @@ const guards = [];
 let visitors = [];
 
 /* ======================
+   COST CALC
+====================== */
+function upgradeCost(base, level){
+  return base * (level + 1);
+}
+
+/* ======================
    SALARY HELPERS
 ====================== */
-function getGuardSalaryPerSec(){ return guards.length * 1; }
-function getShopSalaryPerSec(){ return shops.reduce((s,x)=>s+(x.salary||0),0); }
-function getTotalSalaryPerSec(){ return getGuardSalaryPerSec()+getShopSalaryPerSec(); }
+function getGuardSalaryPerSec(){
+  return guards.length * 1; // unchanged
+}
+function getShopSalaryPerSec(){
+  return shops.reduce((sum, s) => sum + (s.salary || 0), 0);
+}
+function getTotalSalaryPerSec(){
+  return getGuardSalaryPerSec() + getShopSalaryPerSec();
+}
+
+/* ======================
+   UI BUILDERS
+====================== */
+function buildShopUI(){
+  const container = document.getElementById("shopControls");
+  container.innerHTML = "";
+
+  shops.forEach((shop,i)=>{
+
+    const protectionText = protectionLevels[shop.name][shop.protection];
+    const managementText = managementLevels[shop.management];
+
+    const protectionCost = shop.protection < maxLevel ?
+      upgradeCost(100, shop.protection) : null;
+
+    const managementCost = shop.management < maxLevel ?
+      upgradeCost(80, shop.management) : null;
+
+    const div = document.createElement("div");
+    div.className="shopBlock";
+    div.innerHTML = `
+      <b>${shop.name}</b>
+
+      <div class="small">
+        Product Protection: Level ${shop.protection}<br>
+        ${protectionText}
+      </div>
+      ${shop.protection < maxLevel ?
+        `<button onclick="upgradeProtection(${i})">
+          Upgrade Protection (£${protectionCost})
+        </button>` : "<div class='small'>Max Level</div>"}
+
+      <div class="small">
+        Store Management: Level ${shop.management}<br>
+        ${managementText}
+      </div>
+      ${shop.management < maxLevel ?
+        `<button onclick="upgradeManagement(${i})">
+          Upgrade Management (£${managementCost})
+        </button>` : "<div class='small'>Max Level</div>"}
+
+      <div class="small">
+        Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function buildCCTVUI(){
+  const panel = document.getElementById("cctvPanel");
+  const text = cctvLevels[cctvLevel];
+  const cost = cctvLevel < maxLevel ?
+    upgradeCost(120, cctvLevel) : null;
+
+  panel.innerHTML = `
+    <div class="small">
+      CCTV Level ${cctvLevel}<br>
+      ${text}
+    </div>
+    ${cctvLevel < maxLevel ?
+      `<button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>`
+      : "<div class='small'>Max Level</div>"}
+  `;
+}
+
+/* ======================
+   UPGRADES
+====================== */
+function upgradeProtection(i){
+  if(gamePhase !== "planning") return;
+  const shop = shops[i];
+  if(shop.protection >= maxLevel) return;
+
+  const cost = upgradeCost(100, shop.protection);
+  if(money < cost) return;
+
+  money -= cost;
+  shop.protection++;
+
+  // Staff-based protection levels
+  if(shop.protection === 3) shop.salary += 0.5;
+  if(shop.protection === 4) shop.salary += 0.8;
+
+  buildShopUI();
+}
+
+function upgradeManagement(i){
+  if(gamePhase !== "planning") return;
+  const shop = shops[i];
+  if(shop.management >= maxLevel) return;
+
+  const cost = upgradeCost(80, shop.management);
+  if(money < cost) return;
+
+  money -= cost;
+  shop.management++;
+
+  // Staff-heavy management levels
+  if(shop.management === 3) shop.salary += 0.4;
+  if(shop.management === 4) shop.salary += 0.6;
+
+  buildShopUI();
+}
+
+function upgradeCCTV(){
+  if(gamePhase !== "planning") return;
+  if(cctvLevel >= maxLevel) return;
+
+  const cost = upgradeCost(120, cctvLevel);
+  if(money < cost) return;
+
+  money -= cost;
+  cctvLevel++;
+  buildCCTVUI();
+}
 
 /* ======================
    PHASE CONTROL
@@ -136,13 +316,14 @@ function getTotalSalaryPerSec(){ return getGuardSalaryPerSec()+getShopSalaryPerS
 function startWave(){
   if(gamePhase !== "planning") return;
 
+  // reset wave analytics
   waveStats = {
-    grossSales:0,
-    mallIncome:0,
-    theftLoss:0,
-    theftCount:0,
-    offenderSet:new Set(),
-    salaryPaid:0
+    grossSales: 0,
+    mallIncome: 0,
+    theftLoss: 0,
+    theftCount: 0,
+    offenderSet: new Set(),
+    salaryPaid: 0
   };
 
   gamePhase = "wave";
@@ -150,7 +331,6 @@ function startWave(){
 }
 
 function endWave(){
-
   const net = waveStats.mallIncome - waveStats.salaryPaid - waveStats.theftLoss;
 
   alert(
@@ -178,41 +358,69 @@ Net Result: £${net.toFixed(0)}`
 }
 
 /* ======================
-   VISITOR SPAWN
+   GUARDS
+====================== */
+canvas.addEventListener("click", function(e){
+  if(!placingGuard || gamePhase !== "planning") return;
+
+  const rect = canvas.getBoundingClientRect();
+  guards.push({
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+    radius:130
+  });
+
+  money -= 150;
+  placingGuard = false;
+});
+
+function addGuard(){
+  if(gamePhase !== "planning") return;
+  if(money < 150) return;
+  placingGuard = true;
+}
+
+/* ======================
+   VISITOR LOGIC
 ====================== */
 function spawnVisitor(){
   let type;
   const r = Math.random();
 
-  if(waveNumber===1)
-    type = r<0.60?"ordinary":r<0.90?"opportunist":"determined";
-  else if(waveNumber===2)
-    type = r<0.55?"ordinary":r<0.85?"opportunist":"determined";
-  else
-    type = r<0.45?"ordinary":r<0.75?"opportunist":"determined";
+  if(waveNumber === 1){
+    type = r < 0.60 ? "ordinary" : r < 0.90 ? "opportunist" : "determined";
+  } else if(waveNumber === 2){
+    type = r < 0.55 ? "ordinary" : r < 0.85 ? "opportunist" : "determined";
+  } else {
+    type = r < 0.45 ? "ordinary" : r < 0.75 ? "opportunist" : "determined";
+  }
 
   const profiles = {
-    ordinary:{M:10,S:40,risk:1.5,effort:1.2,maxThefts:1},
-    opportunist:{M:25,S:25,risk:1.0,effort:1.0,maxThefts:2},
-    determined:{M:40,S:10,risk:0.5,effort:1.5,maxThefts:(waveNumber===1?2:4)}
+    ordinary:{ M:10, S:40, risk:1.5, effort:1.2, maxThefts:1 },
+    opportunist:{ M:25, S:25, risk:1.0, effort:1.0, maxThefts:2 },
+    determined:{ M:40, S:10, risk:0.5, effort:1.5, maxThefts: (waveNumber === 1 ? 2 : 4) }
   };
 
   const p = profiles[type];
 
   visitors.push({
-    x:200,y:200,
+    x:200, y:200,
     pathIndex:0,
     speed:60,
     type:type,
+
     baseS:p.S,
     M:p.M,
     S:p.S,
     O:20,
     R:0,
+
     riskSensitivity:p.risk,
     effortSensitivity:p.effort,
+
     theftsCommitted:0,
     maxThefts:p.maxThefts,
+
     visitedShops:{},
     finished:false
   });
@@ -222,12 +430,12 @@ function spawnVisitor(){
    UPDATE
 ====================== */
 function update(dt){
-  if(gamePhase==="wave"){
-
+  if(gamePhase === "wave"){
     waveTimer -= dt;
 
-    if(waveTimer > waveLength*0.4){
-      if(Math.random()<0.04) spawnVisitor();
+    // spawn only during first 60% of wave
+    if(waveTimer > waveLength * 0.4){
+      if(Math.random() < 0.04) spawnVisitor();
     }
 
     visitors.forEach(v=>{
@@ -236,81 +444,95 @@ function update(dt){
       checkShops(v);
     });
 
-    const salaryFrame = getTotalSalaryPerSec()*dt;
+    // salary tracking + payment (wave only)
+    const salaryFrame = getTotalSalaryPerSec() * dt;
     waveStats.salaryPaid += salaryFrame;
     money -= salaryFrame;
 
-    visitors = visitors.filter(v=>!v.finished);
+    // remove finished visitors
+    visitors = visitors.filter(v => !v.finished);
 
-    if(waveTimer<=0 && visitors.length===0){
+    // end wave only when timer ended AND no visitors remain
+    if(waveTimer <= 0 && visitors.length === 0){
       endWave();
     }
   }
 }
 
-function moveVisitor(v,dt){
+function moveVisitor(v, dt){
   if(v.finished) return;
 
-  const target = v.pathIndex+1;
-  if(target>=path.length){ v.finished=true; return; }
+  const targetIndex = v.pathIndex + 1;
+  if(targetIndex >= path.length){
+    v.finished = true;
+    return;
+  }
 
-  const next = path[target];
-  const dx=next.x-v.x;
-  const dy=next.y-v.y;
-  const dist=Math.hypot(dx,dy);
-  const step=v.speed*dt;
+  const next = path[targetIndex];
+  const dx = next.x - v.x;
+  const dy = next.y - v.y;
+  const dist = Math.hypot(dx, dy);
+  const step = v.speed * dt;
 
-  if(dist<=step){
-    v.x=next.x; v.y=next.y; v.pathIndex++;
-  }else{
-    v.x+=dx/dist*step;
-    v.y+=dy/dist*step;
+  if(dist <= step){
+    v.x = next.x;
+    v.y = next.y;
+    v.pathIndex++;
+  } else {
+    v.x += dx / dist * step;
+    v.y += dy / dist * step;
   }
 }
 
 function applySecurity(v){
-  v.R = cctvLevel*5;
+  v.R = cctvLevel * 5;
   v.S = v.baseS;
+
   guards.forEach(g=>{
-    if(Math.hypot(v.x-g.x,v.y-g.y)<g.radius){
-      v.R+=15; v.S-=5;
+    if(Math.hypot(v.x-g.x,v.y-g.y) < g.radius){
+      v.R += 15;
+      v.S -= 5;
     }
   });
-  v.S=Math.max(0,v.S);
+
+  v.S = Math.max(0, v.S);
 }
 
 function checkShops(v){
-  shops.forEach((shop,i)=>{
-    if(v.visitedShops[i]) return;
+  shops.forEach((shop, index)=>{
+    if(v.visitedShops[index]) return;
 
-    if(Math.hypot(v.x-shop.x,v.y-shop.y)<60){
+    if(Math.hypot(v.x-shop.x, v.y-shop.y) < 60){
+      v.visitedShops[index] = true;
 
-      v.visitedShops[i]=true;
+      v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
+      v.M -= shop.management * 2;
 
-      v.O = shop.baseOpportunity - shop.protection*5*v.effortSensitivity;
-      v.M -= shop.management*2;
+      const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
-      const theftScore = v.M+v.O-(v.R*v.riskSensitivity);
+      if(v.theftsCommitted < v.maxThefts && theftScore > 30){
+        const theftLoss = shop.value * 0.75;
 
-      if(v.theftsCommitted<v.maxThefts && theftScore>30){
-
-        const theftLoss=shop.value*0.75;
-        waveStats.theftLoss+=theftLoss;
+        waveStats.theftLoss += theftLoss;
         waveStats.theftCount++;
         waveStats.offenderSet.add(v);
 
-        money-=theftLoss;
-        reputation-=2;
+        money -= theftLoss;
+        reputation -= 2;
         v.theftsCommitted++;
+
+        // Emboldening placeholder still here if you want it:
+        // if(v.type === "determined"){ v.M += 5; }
+
       }
-      else if(v.S>v.M){
+      else if(v.S > v.M){
+        const mallShare = shop.value * 0.30;
 
-        const mallShare=shop.value*0.30;
-        waveStats.grossSales+=shop.value;
-        waveStats.mallIncome+=mallShare;
+        waveStats.grossSales += shop.value;
+        waveStats.mallIncome += mallShare;
 
-        money+=mallShare;
-        reputation+=1;
+        money += mallShare;
+        reputation += 1;
       }
     }
   });
@@ -322,41 +544,65 @@ function checkShops(v){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // path
   ctx.strokeStyle="#444";
   ctx.lineWidth=40;
   ctx.beginPath();
-  ctx.moveTo(path[0].x,path[0].y);
-  for(let i=1;i<path.length;i++)
-    ctx.lineTo(path[i].x,path[i].y);
+  ctx.moveTo(path[0].x, path[0].y);
+  for(let i = 1; i < path.length; i++){
+    ctx.lineTo(path[i].x, path[i].y);
+  }
   ctx.stroke();
 
+  // shops
+  shops.forEach(shop=>{
+    ctx.fillStyle="#333";
+    ctx.fillRect(shop.x-50,shop.y-30,100,60);
+    ctx.fillStyle="#fff";
+    ctx.fillText(shop.name,shop.x-40,shop.y);
+  });
+
+  // guards
+  guards.forEach(g=>{
+    ctx.strokeStyle="rgba(0,200,255,0.3)";
+    ctx.beginPath();
+    ctx.arc(g.x,g.y,g.radius,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle="#0ff";
+    ctx.fillRect(g.x-6,g.y-6,12,12);
+  });
+
+  // visitors
   visitors.forEach(v=>{
-    ctx.fillStyle=v.type==="ordinary"?"#0f0":
-                  v.type==="opportunist"?"#ff0":"#f00";
+    ctx.fillStyle=v.type==="ordinary"?"#0f0"
+               : v.type==="opportunist"?"#ff0":"#f00";
     ctx.beginPath();
     ctx.arc(v.x,v.y,8,0,Math.PI*2);
     ctx.fill();
   });
 
-  document.getElementById("money").innerText=Math.round(money);
-  document.getElementById("rep").innerText=Math.round(reputation);
-  document.getElementById("visitors").innerText=visitors.length;
+  // top stats
+  document.getElementById("money").innerText = Math.round(money);
+  document.getElementById("rep").innerText = Math.round(reputation);
+  document.getElementById("visitors").innerText = visitors.length;
   document.getElementById("phaseDisplay").innerText =
-    gamePhase==="planning"?"Planning":"Wave Active";
+    gamePhase === "planning" ? "Planning" : "Wave Active";
 
-  const totalSalary=(gamePhase==="wave")?getTotalSalaryPerSec():0;
-  document.getElementById("salaryDisplay").innerText=
-    totalSalary.toFixed(1)+"/sec";
+  const totalSalary = (gamePhase === "wave") ? getTotalSalaryPerSec() : 0;
+  document.getElementById("salaryDisplay").innerText =
+    totalSalary.toFixed(1) + "/sec";
 
-  if(gamePhase==="wave"){
+  // analytics panel
+  if(gamePhase === "wave"){
     const net = waveStats.mallIncome - waveStats.salaryPaid - waveStats.theftLoss;
 
-    let netColor="#aaa";
-    if(net>0) netColor="#4caf50";
-    else if(net<0) netColor="#e53935";
-    else netColor="#ffb300";
+    let netColor = "#aaa";
+    if(net > 0) netColor = "#4caf50";
+    else if(net < 0) netColor = "#e53935";
+    else netColor = "#ffb300";
 
-    document.getElementById("analyticsPanel").innerHTML=`
+    document.getElementById("analyticsPanel").innerHTML = `
       🟢 <b>Revenue</b><br>
       Sales: £${waveStats.grossSales.toFixed(0)}<br>
       Mall Share: £${waveStats.mallIncome.toFixed(0)}<br><br>
@@ -369,15 +615,18 @@ function draw(){
       🔵 <b>Costs</b><br>
       Salary: £${waveStats.salaryPaid.toFixed(0)}<br><br>
 
-      <div style="font-size:16px;color:${netColor}">
+      <div style="font-size:16px; color:${netColor}">
         Net: £${net.toFixed(0)}
       </div>
     `;
-  }else{
-    document.getElementById("analyticsPanel").innerHTML="";
+  } else {
+    document.getElementById("analyticsPanel").innerHTML = "";
   }
 }
 
+/* ======================
+   GAME LOOP
+====================== */
 let last=0;
 function loop(t){
   const dt=(t-last)/1000;
@@ -387,6 +636,9 @@ function loop(t){
   requestAnimationFrame(loop);
 }
 
+// Build UI and start
+buildShopUI();
+buildCCTVUI();
 loop(0);
 </script>
 </body>
