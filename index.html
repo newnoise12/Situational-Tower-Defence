@@ -150,21 +150,25 @@ function layoutShops(){
 
 function resizeCanvas(){
 
-  // Use layout size directly
-  worldW = canvas.clientWidth;
-  worldH = canvas.clientHeight;
+  // Get the actual on-screen size of the canvas
+  const rect = canvas.getBoundingClientRect();
 
+  worldW = rect.width;
+  worldH = rect.height;
+
+  // Handle high-DPI screens properly
   const dpr = window.devicePixelRatio || 1;
 
-  canvas.width = Math.round(worldW * dpr);
+  canvas.width  = Math.round(worldW * dpr);
   canvas.height = Math.round(worldH * dpr);
 
-  // Draw in CSS pixel coordinates
+  // Tell canvas to draw using CSS pixel coordinates
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Dynamic scaling
-  margin = Math.min(worldW, worldH) * 0.12;
-  corridorWidth = Math.min(worldW, worldH) * 0.06;
+  // 🔵 VERY IMPORTANT:
+  // Keep margins proportional but safe
+  margin = Math.min(worldW, worldH) * 0.10;
+  corridorWidth = Math.min(worldW, worldH) * 0.05;
 
   updatePath();
   layoutShops();
@@ -817,6 +821,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
