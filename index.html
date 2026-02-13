@@ -502,10 +502,14 @@ function draw(){
   ctx.strokeStyle="#444";
   ctx.lineWidth=40;
   ctx.beginPath();
-  ctx.moveTo(path[0].x,path[0].y);
-  path.forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.closePath();
-  ctx.stroke();
+  ctx.moveTo(path[0].x, path[0].y);
+
+for(let i = 1; i < path.length; i++){
+  ctx.lineTo(path[i].x, path[i].y);
+}
+
+ctx.stroke();
+
 
   shops.forEach(shop=>{
     ctx.fillStyle="#333";
@@ -557,6 +561,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
