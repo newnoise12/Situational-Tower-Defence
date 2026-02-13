@@ -43,6 +43,7 @@ button {
   <div class="stat">💰 Money: <span id="money"></span></div>
   <div class="stat">⭐ Reputation: <span id="rep"></span></div>
   <div class="stat">👥 Visitors: <span id="visitors"></span></div>
+  <div class="stat">💼 Wave Salary: <span id="salaryDisplay"></span></div>
 
   <hr>
   <div>Wave: <span id="waveNum">1</span></div>
@@ -93,7 +94,6 @@ const path = [
 /* ======================
    UPGRADE DATA
 ====================== */
-
 const managementLevels = [
   "Basic Layout",
   "Clear Anti-Theft Signage",
@@ -144,12 +144,11 @@ const protectionLevels = {
 /* ======================
    SHOPS
 ====================== */
-
 const shops = [
-  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0},
-  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0},
-  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0},
-  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0}
+  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
+  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
+  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
+  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
 ];
 
 const guards = [];
@@ -163,9 +162,23 @@ function upgradeCost(base, level){
 }
 
 /* ======================
+   SALARY HELPERS
+====================== */
+function getGuardSalaryPerSec(){
+  return guards.length * 1; // unchanged per your request
+}
+
+function getShopSalaryPerSec(){
+  return shops.reduce((sum, s) => sum + (s.salary || 0), 0);
+}
+
+function getTotalSalaryPerSec(){
+  return getGuardSalaryPerSec() + getShopSalaryPerSec();
+}
+
+/* ======================
    UI BUILDERS
 ====================== */
-
 function buildShopUI(){
   const container = document.getElementById("shopControls");
   container.innerHTML = "";
@@ -203,6 +216,10 @@ function buildShopUI(){
         `<button onclick="upgradeManagement(${i})">
           Upgrade Management (£${managementCost})
         </button>` : "<div class='small'>Max Level</div>"}
+
+      <div class="small">
+        Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
+      </div>
     `;
     container.appendChild(div);
   });
@@ -228,7 +245,6 @@ function buildCCTVUI(){
 /* ======================
    UPGRADES
 ====================== */
-
 function upgradeProtection(i){
   if(gamePhase !== "planning") return;
   const shop = shops[i];
@@ -239,6 +255,11 @@ function upgradeProtection(i){
 
   money -= cost;
   shop.protection++;
+
+  // Staff-based protection levels
+  if(shop.protection === 3) shop.salary += 0.5;
+  if(shop.protection === 4) shop.salary += 0.8;
+
   buildShopUI();
 }
 
@@ -252,6 +273,11 @@ function upgradeManagement(i){
 
   money -= cost;
   shop.management++;
+
+  // Staff-heavy management levels
+  if(shop.management === 3) shop.salary += 0.4;
+  if(shop.management === 4) shop.salary += 0.6;
+
   buildShopUI();
 }
 
@@ -270,7 +296,6 @@ function upgradeCCTV(){
 /* ======================
    PHASE CONTROL
 ====================== */
-
 function startWave(){
   if(gamePhase !== "planning") return;
   gamePhase = "wave";
@@ -287,7 +312,6 @@ function endWave(){
 /* ======================
    GUARDS
 ====================== */
-
 canvas.addEventListener("click", function(e){
   if(!placingGuard || gamePhase !== "planning") return;
 
@@ -311,21 +335,15 @@ function addGuard(){
 /* ======================
    VISITOR LOGIC
 ====================== */
-
 function spawnVisitor(){
-
-  /* -------------------------
-     WAVE-BASED OFFENDER MIX
-  -------------------------- */
-
   let type;
   const r = Math.random();
 
+  // Wave-based mix
   if(waveNumber === 1){
-  type = r < 0.60 ? "ordinary"
-       : r < 0.90 ? "opportunist"
-       : "determined";
-}
+    type = r < 0.60 ? "ordinary"
+         : r < 0.90 ? "opportunist"
+         : "determined";
   }
   else if(waveNumber === 2){
     type = r < 0.55 ? "ordinary"
@@ -338,39 +356,16 @@ function spawnVisitor(){
          : "determined";
   }
 
-  /* -------------------------
-     VISITOR PROFILES
-  -------------------------- */
-
   const profiles = {
-    ordinary:{
-      M:10,
-      S:40,
-      risk:1.5,
-      effort:1.2,
-      maxThefts:1
-    },
-    opportunist:{
-      M:25,
-      S:25,
-      risk:1.0,
-      effort:1.0,
-      maxThefts:2
-    },
-    determined:{
-      M:40,
-      S:10,
-      risk:0.5,
-      effort:1.5,
-      maxThefts: waveNumber === 1 ? 2 : 4 // less aggressive in round 1
-    }
+    ordinary:{ M:10, S:40, risk:1.5, effort:1.2, maxThefts:1 },
+    opportunist:{ M:25, S:25, risk:1.0, effort:1.0, maxThefts:2 },
+    determined:{ M:40, S:10, risk:0.5, effort:1.5, maxThefts: (waveNumber === 1 ? 2 : 4) }
   };
 
   const p = profiles[type];
 
   visitors.push({
-    x:200,
-    y:200,
+    x:200, y:200,
     pathIndex:0,
     speed:60,
     type:type,
@@ -390,19 +385,17 @@ function spawnVisitor(){
     visitedShops:{}
   });
 }
+
 /* ======================
    UPDATE
 ====================== */
-
 function update(dt){
-
   if(gamePhase === "wave"){
-
     waveTimer -= dt;
 
     // Only spawn during first 60% of wave
     if(waveTimer > waveLength * 0.4){
-      if(Math.random()<0.04) spawnVisitor();
+      if(Math.random() < 0.04) spawnVisitor();
     }
 
     visitors.forEach(v=>{
@@ -411,8 +404,8 @@ function update(dt){
       checkShops(v);
     });
 
-    // Guard salary only during wave
-    money -= guards.length * 1 * dt;
+    // Salary only during wave (guards + staff-based upgrades)
+    money -= getTotalSalaryPerSec() * dt;
 
     // Remove finished visitors
     visitors = visitors.filter(v => v.pathIndex < path.length);
@@ -441,7 +434,7 @@ function applySecurity(v){
   v.S = v.baseS;
 
   guards.forEach(g=>{
-    if(Math.hypot(v.x-g.x,v.y-g.y)<g.radius){
+    if(Math.hypot(v.x-g.x,v.y-g.y) < g.radius){
       v.R += 15;
       v.S -= 5;
     }
@@ -449,48 +442,34 @@ function applySecurity(v){
 
   v.S = Math.max(0, v.S);
 }
-  
+
 function checkShops(v){
-
   shops.forEach((shop, index)=>{
-
-    // Skip if already interacted with this shop
     if(v.visitedShops[index]) return;
 
-    // Check if visitor is inside shop area
     if(Math.hypot(v.x-shop.x, v.y-shop.y) < 60){
-
-      // Mark this shop as visited
       v.visitedShops[index] = true;
 
-      // Apply shop effects
       v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
       v.M -= shop.management * 2;
 
       const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
-      /* ---- UPDATED THEFT LOGIC ---- */
-
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
+        const theftLoss = shop.value * 0.75;
+        money -= theftLoss;
+        reputation -= 2;
+        v.theftsCommitted++; // IMPORTANT: count thefts
 
-        // Theft occurs
-       let theftLoss = shop.value * 0.75; // still painful
-money -= theftLoss;
-reputation -= 2; // slower spiral
-
-        // Optional: emboldening placeholder (we'll refine later)
+        // Emboldening placeholder (refine later)
         if(v.type === "determined"){
-          v.M += 5; // small motivation boost
+          v.M += 5;
         }
-
-      } 
+      }
       else if(v.S > v.M){
-
-        // Legitimate purchase
         money += shop.value;
         reputation += 1;
       }
-
     }
   });
 }
@@ -498,7 +477,6 @@ reputation -= 2; // slower spiral
 /* ======================
    DRAW
 ====================== */
-
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -527,18 +505,22 @@ function draw(){
   });
 
   visitors.forEach(v=>{
-    ctx.fillStyle=v.type==="ordinary"?"#0f0":
-                   v.type==="opportunist"?"#ff0":"#f00";
+    ctx.fillStyle=v.type==="ordinary"?"#0f0"
+               : v.type==="opportunist"?"#ff0":"#f00";
     ctx.beginPath();
     ctx.arc(v.x,v.y,8,0,Math.PI*2);
     ctx.fill();
   });
 
-  document.getElementById("money").innerText=Math.round(money);
-  document.getElementById("rep").innerText=Math.round(reputation);
-  document.getElementById("visitors").innerText=visitors.length;
+  document.getElementById("money").innerText = Math.round(money);
+  document.getElementById("rep").innerText = Math.round(reputation);
+  document.getElementById("visitors").innerText = visitors.length;
   document.getElementById("phaseDisplay").innerText =
     gamePhase === "planning" ? "Planning" : "Wave Active";
+
+  const totalSalary = (gamePhase === "wave") ? getTotalSalaryPerSec() : 0;
+  document.getElementById("salaryDisplay").innerText =
+    totalSalary.toFixed(1) + "/sec";
 }
 
 let last=0;
@@ -556,10 +538,3 @@ loop(0);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
