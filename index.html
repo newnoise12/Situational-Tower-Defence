@@ -150,18 +150,16 @@ function layoutShops(){
 
 function resizeCanvas(){
 
-  const rect = canvas.getBoundingClientRect();
+  // Use layout size directly
+  worldW = canvas.clientWidth;
+  worldH = canvas.clientHeight;
 
-  // CSS pixel size (world space)
-  worldW = rect.width;
-  worldH = rect.height;
-
-  // Handle retina displays properly
   const dpr = window.devicePixelRatio || 1;
+
   canvas.width = Math.round(worldW * dpr);
   canvas.height = Math.round(worldH * dpr);
 
-  // Draw using CSS pixel coordinate system
+  // Draw in CSS pixel coordinates
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Dynamic scaling
@@ -171,9 +169,6 @@ function resizeCanvas(){
   updatePath();
   layoutShops();
 }
-
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
 
 /* ======================
    GAME STATE
@@ -822,6 +817,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
