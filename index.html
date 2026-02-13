@@ -152,6 +152,9 @@ function resizeCanvas(){
 
   // Get the actual on-screen size of the canvas
   console.log("worldW:", worldW, "worldH:", worldH);
+  console.log("Canvas width:", rect.width);
+  canvas.style.background = "rgba(255,0,0,0.1)";
+
   const rect = canvas.getBoundingClientRect();
 
   worldW = rect.width;
@@ -825,6 +828,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
