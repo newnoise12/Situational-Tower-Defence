@@ -147,32 +147,28 @@ function layoutShops(){
 }
 
 function resizeCanvas(){
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-  // Get the actual on-screen size of the canvas
-  console.log("resize running");
+
   const rect = canvas.getBoundingClientRect();
 
   worldW = rect.width;
   worldH = rect.height;
 
-  // Handle high-DPI screens properly
   const dpr = window.devicePixelRatio || 1;
 
   canvas.width  = Math.round(worldW * dpr);
   canvas.height = Math.round(worldH * dpr);
 
-  // Tell canvas to draw using CSS pixel coordinates
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // 🔵 VERY IMPORTANT:
-  // Keep margins proportional but safe
   margin = Math.min(worldW, worldH) * 0.10;
   corridorWidth = Math.min(worldW, worldH) * 0.05;
 
   updatePath();
   layoutShops();
 }
+  
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 /* ======================
    GAME STATE
@@ -824,6 +820,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
