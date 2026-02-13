@@ -385,7 +385,8 @@ function spawnVisitor(){
     theftsCommitted:0,
     maxThefts:p.maxThefts,
 
-    visitedShops:{}
+    visitedShops:{},
+    finished:false,
   });
 }
 
@@ -411,7 +412,7 @@ function update(dt){
     money -= getTotalSalaryPerSec() * dt;
 
     // Remove finished visitors
-    visitors = visitors.filter(v => v.pathIndex < path.length);
+   visitors = visitors.filter(v => !v.finished);
 
     // Only end wave when timer expired AND no visitors remain
     if(waveTimer <= 0 && visitors.length === 0){
@@ -420,43 +421,37 @@ function update(dt){
   }
 }
 
-function moveVisitor(v,dt){
+function moveVisitor(v, dt){
 
-  // If reached final node, mark complete
-  if(v.pathIndex >= path.length - 1){
-    v.pathIndex = path.length;
+  // If already finished, do nothing
+  if(v.finished) return;
+
+  const targetIndex = v.pathIndex + 1;
+
+  // If no more nodes, mark finished
+  if(targetIndex >= path.length){
+    v.finished = true;
     return;
   }
 
-  const next = path[v.pathIndex + 1];
+  const next = path[targetIndex];
   const dx = next.x - v.x;
   const dy = next.y - v.y;
-  const dist = Math.hypot(dx,dy);
+  const dist = Math.hypot(dx, dy);
 
-  if(dist < 2){
+  const step = v.speed * dt;
+
+  if(dist <= step){
+    // Snap exactly to node to prevent drift
+    v.x = next.x;
+    v.y = next.y;
     v.pathIndex++;
   }
   else{
-    v.x += dx/dist * v.speed * dt;
-    v.y += dy/dist * v.speed * dt;
+    v.x += dx / dist * step;
+    v.y += dy / dist * step;
   }
 }
-
-
-function applySecurity(v){
-  v.R = cctvLevel * 5;
-  v.S = v.baseS;
-
-  guards.forEach(g=>{
-    if(Math.hypot(v.x-g.x,v.y-g.y) < g.radius){
-      v.R += 15;
-      v.S -= 5;
-    }
-  });
-
-  v.S = Math.max(0, v.S);
-}
-
 function checkShops(v){
   shops.forEach((shop, index)=>{
     if(v.visitedShops[index]) return;
@@ -561,6 +556,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
