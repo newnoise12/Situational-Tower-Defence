@@ -368,7 +368,8 @@ function spawnVisitor(){
   const p = profiles[type];
 
   visitors.push({
-    x:200, y:200,
+    x:200,
+    y:200,
     pathIndex:0,
     speed:60,
     type:type,
@@ -385,8 +386,8 @@ function spawnVisitor(){
     theftsCommitted:0,
     maxThefts:p.maxThefts,
 
-    visitedShops:{},
-    finished:false,
+    visitedShops:{},   // ← comma added here
+    finished:false
   });
 }
 
@@ -556,6 +557,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
