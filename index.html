@@ -17,12 +17,8 @@ body{
 }
 
 /* LEFT PANEL */
-#ui{
-  flex:0 0 280px;
-  background:#1b1b1b;
-  border-right:1px solid #333;
-  padding:12px;
-  overflow-y:auto;
+#ui { overflow: hidden; display:flex; flex-direction:column; }
+#shopControls { overflow-y:auto; flex:1; }
 }
 
 /* CENTER CANVAS */
@@ -101,13 +97,50 @@ button{
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+// world size in CSS pixels (what you draw in)
+let worldW = 0;
+let worldH = 0;
+
+let path = [];
+const margin = 120;
+
+function updatePath(){
+  path = [
+    { x: margin,       y: margin },        // Entrance
+    { x: worldW-margin, y: margin },
+    { x: worldW-margin, y: worldH-margin },
+    { x: margin,       y: worldH-margin },
+    { x: margin,       y: margin }         // Exit back to entrance
+  ];
+}
+
+function layoutShops(){
+  // keep them positioned relative to the current canvas size
+  shops[0].x = worldW * 0.50; shops[0].y = margin;          // Electronics (top middle)
+  shops[1].x = worldW - margin; shops[1].y = worldH * 0.50; // Clothing (right middle)
+  shops[2].x = worldW * 0.50; shops[2].y = worldH - margin; // Jewellery (bottom middle)
+  shops[3].x = margin; shops[3].y = worldH * 0.50;          // Food Court (left middle)
+}
+
 function resizeCanvas(){
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
 
-  updatePath();   // 👈 important
+  // CSS pixel size
+  worldW = rect.width;
+  worldH = rect.height;
+
+  // match drawing buffer to device pixels
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(worldW * dpr);
+  canvas.height = Math.round(worldH * dpr);
+
+  // draw in CSS pixels
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  updatePath();
+  layoutShops();
 }
+
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
@@ -210,11 +243,12 @@ const protectionLevels = {
    SHOPS
 ====================== */
 const shops = [
-  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
-  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
-  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
-  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
+  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
+  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
+  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
+  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
 ];
+
 
 const guards = [];
 let visitors = [];
@@ -777,6 +811,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
