@@ -453,6 +453,19 @@ function moveVisitor(v, dt){
     v.y += dy / dist * step;
   }
 }
+  function applySecurity(v){
+  v.R = cctvLevel * 5;
+  v.S = v.baseS;
+
+  guards.forEach(g=>{
+    if(Math.hypot(v.x-g.x,v.y-g.y) < g.radius){
+      v.R += 15;
+      v.S -= 5;
+    }
+  });
+
+  v.S = Math.max(0, v.S);
+}
 function checkShops(v){
   shops.forEach((shop, index)=>{
     if(v.visitedShops[index]) return;
@@ -557,6 +570,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
