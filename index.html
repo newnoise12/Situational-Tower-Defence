@@ -141,11 +141,14 @@ function updatePath(){
 function layoutShops(){
   const strokePadding = 10;
   const inset = margin + (corridorWidth * 0.5) + strokePadding;
+  
+  // Add extra offset for shops so they don't overlap with edge
+  const shopOffset = 60;
 
-  shops[0].x = worldW * 0.50; shops[0].y = inset;          // top middle
-  shops[1].x = worldW - inset; shops[1].y = worldH * 0.50; // right middle
-  shops[2].x = worldW * 0.50; shops[2].y = worldH - inset; // bottom middle
-  shops[3].x = inset;         shops[3].y = worldH * 0.50;  // left middle
+  shops[0].x = worldW * 0.50; shops[0].y = inset;                    // top middle (Electronics)
+  shops[1].x = worldW - inset - shopOffset; shops[1].y = worldH * 0.50; // right middle (Clothing)
+  shops[2].x = worldW * 0.50; shops[2].y = worldH - inset;           // bottom middle (Jewellery)
+  shops[3].x = inset + shopOffset; shops[3].y = worldH * 0.50;       // left middle (Food Court)
 }
 
 function resizeCanvas(){
