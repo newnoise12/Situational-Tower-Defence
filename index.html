@@ -116,7 +116,12 @@ let margin = 0;
 let corridorWidth = 0;
 
 let path = [];
-let margin = Math.min(worldW, worldH) * 0.14;
+const shops = [
+  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
+  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
+  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
+  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
+];
 
 function updatePath(){
   path = [
@@ -127,12 +132,13 @@ function updatePath(){
     { x: margin,          y: margin }
   ];
 }
-  const shops = [
-  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
-  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
-  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
-  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
-];
+
+function layoutShops(){
+  shops[0].x = worldW * 0.50; shops[0].y = margin;           // top middle
+  shops[1].x = worldW - margin; shops[1].y = worldH * 0.50;  // right middle
+  shops[2].x = worldW * 0.50; shops[2].y = worldH - margin;  // bottom middle
+  shops[3].x = margin; shops[3].y = worldH * 0.50;           // left middle
+}
 
 function layoutShops(){
   // keep them positioned relative to the current canvas size
@@ -533,11 +539,10 @@ canvas.addEventListener("click", function(e){
   if(!placingGuard || gamePhase !== "planning") return;
 
   const rect = canvas.getBoundingClientRect();
-  guards.push({
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
-    radius:130
-  });
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  guards.push({ x, y, radius:130 });
 
   money -= 150;
   placingGuard = false;
@@ -817,6 +822,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
