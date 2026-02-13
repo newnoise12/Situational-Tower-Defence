@@ -72,6 +72,8 @@ button{
   <b>Global Surveillance</b>
   <div id="cctvPanel"></div>
   <button onclick="addGuard()">Place Guard (£150)</button>
+<button onclick="toggleInfo('guards','info_guards')">ℹ</button>
+<div id="info_guards"></div>
 
   <div id="shopControls"></div>
 </div>
@@ -218,6 +220,28 @@ function getTotalSalaryPerSec(){
 /* ======================
    UI BUILDERS
 ====================== */
+  function toggleInfo(key, elementId){
+
+  const container = document.getElementById(elementId);
+
+  // If already open, close it
+  if(container.innerHTML !== ""){
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="
+      background:#222;
+      padding:8px;
+      margin-top:6px;
+      border:1px solid #333;
+      font-size:12px;
+    ">
+      ${infoText[key]}
+    </div>
+  `;
+}
 function buildShopUI(){
   const container = document.getElementById("shopControls");
   container.innerHTML = "";
@@ -243,18 +267,23 @@ function buildShopUI(){
         ${protectionText}
       </div>
       ${shop.protection < maxLevel ?
-        `<button onclick="upgradeProtection(${i})">
-          Upgrade Protection (£${protectionCost})
-        </button>` : "<div class='small'>Max Level</div>"}
+        <button onclick="upgradeProtection(${i})">
+  Upgrade Protection (£${protectionCost})
+</button>
+<button onclick="toggleInfo('protection','info_p_${i}')">ℹ</button>
+<div id="info_p_${i}"></div>
+ : "<div class='small'>Max Level</div>"}
 
       <div class="small">
         Store Management: Level ${shop.management}<br>
         ${managementText}
       </div>
       ${shop.management < maxLevel ?
-        `<button onclick="upgradeManagement(${i})">
-          Upgrade Management (£${managementCost})
-        </button>` : "<div class='small'>Max Level</div>"}
+        <button onclick="upgradeManagement(${i})">
+  Upgrade Management (£${managementCost})
+</button>
+<button onclick="toggleInfo('management','info_m_${i}')">ℹ</button>
+<div id="info_m_${i}"></div> : "<div class='small'>Max Level</div>"}
 
       <div class="small">
         Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
@@ -276,8 +305,9 @@ function buildCCTVUI(){
       ${text}
     </div>
     ${cctvLevel < maxLevel ?
-      `<button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>`
-      : "<div class='small'>Max Level</div>"}
+      <button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>
+<button onclick="toggleInfo('cctv','info_cctv')">ℹ</button>
+<div id="info_cctv"></div>: "<div class='small'>Max Level</div>"}
   `;
 }
 
@@ -331,6 +361,47 @@ function upgradeCCTV(){
   cctvLevel++;
   buildCCTVUI();
 }
+/* ======================
+   INFO SYSTEM TEXT
+====================== */
+
+const infoText = {
+  protection: `
+  <b>Product Protection</b><br>
+  Reduces <b>Opportunity</b>.<br><br>
+  • Makes items harder to steal<br>
+  • Strong against opportunists<br>
+  • Less effective against highly determined offenders<br><br>
+  Works by increasing effort required.
+  `,
+
+  management: `
+  <b>Store Management</b><br>
+  Reduces <b>Motivation</b>.<br><br>
+  • Increases social awareness<br>
+  • Staff presence discourages theft<br>
+  • Builds informal guardianship<br><br>
+  Works by reducing temptation.
+  `,
+
+  cctv: `
+  <b>Surveillance (CCTV)</b><br>
+  Increases <b>Perceived Risk</b>.<br><br>
+  • Offenders feel more likely to be caught<br>
+  • Strong against risk-sensitive individuals<br>
+  • Weaker against highly motivated offenders<br><br>
+  Works by increasing perceived detection.
+  `,
+
+  guards: `
+  <b>Security Guards</b><br>
+  Strongly increases <b>Local Risk</b>.<br><br>
+  • Powerful deterrent within area<br>
+  • Reduces repeat offending<br>
+  • Expensive to maintain<br><br>
+  Works through visible authority presence.
+  `
+};
 
 /* ======================
    PHASE CONTROL
@@ -665,3 +736,4 @@ loop(0);
 
 </body>
 </html>
+
