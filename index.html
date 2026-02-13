@@ -87,8 +87,11 @@ let cctvLevel = 0;
 const maxLevel = 4;
 
 const path = [
-  {x:200,y:200},{x:900,y:200},
-  {x:900,y:700},{x:200,y:700}
+  {x:200,y:200},  // Entrance
+  {x:900,y:200},
+  {x:900,y:700},
+  {x:200,y:700},
+  {x:200,y:200}   // Exit (back to entrance)
 ];
 
 /* ======================
@@ -554,6 +557,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
