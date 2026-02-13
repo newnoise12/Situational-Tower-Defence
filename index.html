@@ -716,7 +716,10 @@ function checkShops(v){
    DRAW
 ====================== */
 function draw(){
-  ctx.clearRect(0,0,worldW,worldH);
+ ctx.save();
+ctx.setTransform(1, 0, 0, 1, 0, 0);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.restore();
 
   // path
 ctx.strokeStyle = "#444";
@@ -821,6 +824,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
