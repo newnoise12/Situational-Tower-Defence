@@ -113,7 +113,7 @@ let worldW = 0;
 let worldH = 0;
 
 let path = [];
-const margin = 120;
+let margin = Math.min(worldW, worldH) * 0.14;
 
 function updatePath(){
   path = [
@@ -708,7 +708,7 @@ function draw(){
 
   // path
   ctx.strokeStyle="#444";
-  ctx.lineWidth=40;
+  ctx.lineWidth = Math.max(20, Math.min(45, Math.min(worldW, worldH) * 0.06));
   ctx.beginPath();
   ctx.moveTo(path[0].x, path[0].y);
   for(let i = 1; i < path.length; i++){
@@ -806,6 +806,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
