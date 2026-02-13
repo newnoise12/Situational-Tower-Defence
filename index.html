@@ -313,39 +313,82 @@ function addGuard(){
 ====================== */
 
 function spawnVisitor(){
-  const profiles={
-    ordinary:{M:10,S:40,risk:1.5,effort:1.2},
-    opportunist:{M:25,S:25,risk:1.0,effort:1.0},
-    determined:{M:40,S:10,risk:0.5,effort:1.5}
+
+  let type;
+
+  if(waveNumber === 1){
+    // Training wave – no determined offenders
+    type = Math.random() < 0.85 ? "ordinary" : "opportunist";
+  }
+  else if(waveNumber === 2){
+    const r = Math.random();
+    type = r < 0.6 ? "ordinary"
+         : r < 0.9 ? "opportunist"
+         : "determined";
+  }
+  else{
+    const r = Math.random();
+    type = r < 0.5 ? "ordinary"
+         : r < 0.8 ? "opportunist"
+         : "determined";
+  }
+
+  /* -------------------------
+     VISITOR PROFILES
+  -------------------------- */
+
+  const profiles = {
+    ordinary:{
+      M:10,
+      S:40,
+      risk:1.5,
+      effort:1.2,
+      maxThefts:1
+    },
+    opportunist:{
+      M:25,
+      S:25,
+      risk:1.0,
+      effort:1.0,
+      maxThefts:2
+    },
+    determined:{
+      M:40,
+      S:10,
+      risk:0.5,
+      effort:1.5,
+      maxThefts:4
+    }
   };
 
-  const types=["ordinary","opportunist","determined"];
-  const type=types[Math.floor(Math.random()*3)];
-  const p=profiles[type];
+  const p = profiles[type];
 
-let maxThefts = 1;
+  /* -------------------------
+     CREATE VISITOR
+  -------------------------- */
 
-if(type === "opportunist") maxThefts = 2;
-if(type === "determined") maxThefts = 4;
+  visitors.push({
+    x:200,
+    y:200,
+    pathIndex:0,
+    speed:60,
+    type:type,
 
-visitors.push({
-  x:200,y:200,
-  pathIndex:0,
-  speed:60,
-  type,
-  baseS:p.S,
-  M:p.M,
-  S:p.S,
-  O:20,
-  R:0,
-  riskSensitivity:p.risk,
-  effortSensitivity:p.effort,
-  theftsCommitted:0,
-  maxThefts:maxThefts,
-  visitedShops:{}
-});
+    baseS:p.S,
+    M:p.M,
+    S:p.S,
+    O:20,
+    R:0,
+
+    riskSensitivity:p.risk,
+    effortSensitivity:p.effort,
+
+    theftsCommitted:0,
+    maxThefts:p.maxThefts,
+
+    visitedShops:{}
+  });
 }
-
 /* ======================
    UPDATE
 ====================== */
@@ -430,9 +473,9 @@ function checkShops(v){
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
 
         // Theft occurs
-        money -= shop.value;
-        reputation -= 5;
-        v.theftsCommitted++;
+       let theftLoss = shop.value * 0.75; // still painful
+money -= theftLoss;
+reputation -= 2; // slower spiral
 
         // Optional: emboldening placeholder (we'll refine later)
         if(v.type === "determined"){
@@ -512,6 +555,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
