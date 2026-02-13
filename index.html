@@ -112,16 +112,19 @@ const ctx = canvas.getContext("2d");
 let worldW = 0;
 let worldH = 0;
 
+let margin = 0;
+let corridorWidth = 0;
+
 let path = [];
 let margin = Math.min(worldW, worldH) * 0.14;
 
 function updatePath(){
   path = [
-    { x: margin,       y: margin },        // Entrance
-    { x: worldW-margin, y: margin },
-    { x: worldW-margin, y: worldH-margin },
-    { x: margin,       y: worldH-margin },
-    { x: margin,       y: margin }         // Exit back to entrance
+    { x: margin,          y: margin },
+    { x: worldW - margin, y: margin },
+    { x: worldW - margin, y: worldH - margin },
+    { x: margin,          y: worldH - margin },
+    { x: margin,          y: margin }
   ];
 }
   const shops = [
@@ -140,19 +143,24 @@ function layoutShops(){
 }
 
 function resizeCanvas(){
+
   const rect = canvas.getBoundingClientRect();
 
-  // CSS pixel size
+  // CSS pixel size (world space)
   worldW = rect.width;
   worldH = rect.height;
 
-  // match drawing buffer to device pixels
+  // Handle retina displays properly
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(worldW * dpr);
   canvas.height = Math.round(worldH * dpr);
 
-  // draw in CSS pixels
+  // Draw using CSS pixel coordinate system
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Dynamic scaling
+  margin = Math.min(worldW, worldH) * 0.12;
+  corridorWidth = Math.min(worldW, worldH) * 0.06;
 
   updatePath();
   layoutShops();
@@ -707,14 +715,17 @@ function draw(){
   ctx.clearRect(0,0,worldW,worldH);
 
   // path
-  ctx.strokeStyle="#444";
-  ctx.lineWidth = Math.max(20, Math.min(45, Math.min(worldW, worldH) * 0.06));
-  ctx.beginPath();
-  ctx.moveTo(path[0].x, path[0].y);
-  for(let i = 1; i < path.length; i++){
-    ctx.lineTo(path[i].x, path[i].y);
-  }
-  ctx.stroke();
+ctx.strokeStyle = "#444";
+ctx.lineWidth = corridorWidth;
+ctx.lineJoin = "round";
+ctx.lineCap = "round";
+
+ctx.beginPath();
+ctx.moveTo(path[0].x, path[0].y);
+for(let i = 1; i < path.length; i++){
+  ctx.lineTo(path[i].x, path[i].y);
+}
+ctx.stroke();
 
   // shops
   shops.forEach(shop=>{
@@ -806,6 +817,7 @@ loop(0);
 
 </body>
 </html>
+
 
 
 
