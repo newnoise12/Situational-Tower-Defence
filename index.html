@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Mall Manager – Phase 3</title>
-  <style>
+<style>
 body {
   margin:0;
   background:#111;
@@ -38,6 +38,21 @@ body {
   overflow-y:auto;
 }
 
+#analyticsBox h3{
+  margin:0 0 8px 0;
+}
+
+.rightTabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.rightTabs button{
+  flex:1;
+  padding:8px;
+  margin:0;
+}
+
 button {
   width:100%;
   margin-top:6px;
@@ -53,6 +68,47 @@ button {
 }
 
 .small { font-size:12px; color:#aaa; }
+
+.row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.infoBtn{
+  width:auto;
+  padding:2px 8px;
+  margin:0;
+  font-size:12px;
+  cursor:pointer;
+  background:#2a2a2a;
+  border:1px solid #444;
+  color:#ddd;
+  border-radius:6px;
+}
+.infoBtn:hover{
+  background:#333;
+}
+
+/* Floating tooltip */
+#tooltip{
+  position:fixed;
+  pointer-events:none;
+  background:rgba(20,20,20,0.96);
+  border:1px solid #444;
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:12px;
+  color:#eee;
+  max-width:260px;
+  line-height:1.3;
+  display:none;
+  z-index:9999;
+  box-shadow:0 8px 22px rgba(0,0,0,0.35);
+}
+#tooltip .muted{ color:#aaa; font-size:11px; }
+
 </style>
 </head>
 <body>
@@ -73,9 +129,29 @@ button {
 
   <hr>
 
-  <b>Global Surveillance</b>
+  <div class="row">
+    <b>Global Surveillance</b>
+    <button class="infoBtn"
+      onmouseenter="showTooltip(event,'cctv')"
+      onmousemove="moveTooltip(event)"
+      onmouseleave="hideTooltip()"
+      onclick="showInfoPanel('cctv')"
+      title="More info"
+    >ℹ</button>
+  </div>
+
   <div id="cctvPanel"></div>
-  <button onclick="addGuard()">Place Guard (£150)</button>
+
+  <div class="row" style="margin-top:10px;">
+    <button onclick="addGuard()">Place Guard (£150)</button>
+    <button class="infoBtn"
+      onmouseenter="showTooltip(event,'guards')"
+      onmousemove="moveTooltip(event)"
+      onmouseleave="hideTooltip()"
+      onclick="showInfoPanel('guards')"
+      title="More info"
+    >ℹ</button>
+  </div>
 
   <div id="shopControls"></div>
 
@@ -86,11 +162,21 @@ button {
 
 <!-- RIGHT PANEL -->
 <div id="analyticsBox">
-  <h3>Wave Overview</h3>
-  <div id="analyticsPanel" class="small">
-    Start a wave to see results.
+  <h3 id="rightTitle">Wave Overview</h3>
+
+  <div class="rightTabs">
+    <button onclick="setRightMode('wave')">Wave Overview</button>
+    <button onclick="setRightMode('info')">Security Info</button>
+  </div>
+
+  <div id="analyticsPanel" class="small">Start a wave to see results.</div>
+  <div id="infoPanel" class="small" style="display:none;">
+    Click any ℹ button to see details here.
   </div>
 </div>
+
+<!-- floating tooltip -->
+<div id="tooltip"></div>
 
 <script>
 const canvas = document.getElementById("game");
@@ -125,6 +211,7 @@ const path = [
   {x:200,y:700},
   {x:200,y:200}   // Exit (back to entrance)
 ];
+
 // 🔹 Wave analytics (persistent reference)
 let waveStats = {
   mallRevenue: 0,
@@ -133,7 +220,115 @@ let waveStats = {
   offenders: new Set(),
   salaryPaid: 0
 };
-  
+
+/* ======================
+   INFO TEXT (SECURITY HELP)
+====================== */
+const infoText = {
+  cctv: `
+    <b>Surveillance (CCTV)</b><br>
+    Increases <b>perceived risk</b> (R).<br><br>
+    <span class="muted">
+    • Works best on risk-sensitive visitors<br>
+    • Helps across the whole mall<br>
+    • Less effective against highly motivated offenders
+    </span>
+  `,
+  guards: `
+    <b>Security Guards</b><br>
+    Strong local deterrent (big R boost in range).<br><br>
+    <span class="muted">
+    • Powerful near the guard radius<br>
+    • Helps reduce repeat offending pressure<br>
+    • Costs money every second during a wave
+    </span>
+  `,
+  protection: `
+    <b>Product Protection</b><br>
+    Reduces <b>opportunity</b> (O) for theft in a store.<br><br>
+    <span class="muted">
+    • Makes items harder to steal<br>
+    • Strong vs opportunists<br>
+    • Determined offenders may still try
+    </span>
+  `,
+  management: `
+    <b>Store Management</b><br>
+    Reduces <b>motivation</b> (M) by improving staff presence/awareness.<br><br>
+    <span class="muted">
+    • Discourages casual theft<br>
+    • Builds informal guardianship<br>
+    • Higher levels can increase staffing cost
+    </span>
+  `
+};
+
+/* ======================
+   RIGHT PANEL MODES
+====================== */
+let rightMode = "wave";
+
+function setRightMode(mode){
+  rightMode = mode;
+
+  const analytics = document.getElementById("analyticsPanel");
+  const info = document.getElementById("infoPanel");
+  const title = document.getElementById("rightTitle");
+
+  if(mode === "wave"){
+    title.innerText = "Wave Overview";
+    analytics.style.display = "block";
+    info.style.display = "none";
+  } else {
+    title.innerText = "Security Info";
+    analytics.style.display = "none";
+    info.style.display = "block";
+  }
+}
+
+function showInfoPanel(key, shopName){
+  setRightMode("info");
+  const panel = document.getElementById("infoPanel");
+
+  // Optional: show which shop it's about
+  const prefix = shopName ? `<div style="margin-bottom:6px;"><b>${shopName}</b></div>` : "";
+
+  panel.innerHTML = `
+    ${prefix}
+    ${infoText[key] || "No info available."}
+    <div class="muted" style="margin-top:8px;">
+      Tip: Hover ℹ for a quick tooltip, click ℹ to pin the info here.
+    </div>
+  `;
+}
+
+/* ======================
+   TOOLTIP
+====================== */
+const tooltip = document.getElementById("tooltip");
+
+function showTooltip(e, key){
+  tooltip.innerHTML = infoText[key] || "";
+  tooltip.style.display = "block";
+  moveTooltip(e);
+}
+function moveTooltip(e){
+  const pad = 14;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+
+  // keep on-screen
+  const rect = tooltip.getBoundingClientRect();
+  if(x + rect.width > window.innerWidth) x = e.clientX - rect.width - pad;
+  if(y + rect.height > window.innerHeight) y = e.clientY - rect.height - pad;
+
+  tooltip.style.left = x + "px";
+  tooltip.style.top = y + "px";
+}
+function hideTooltip(){
+  tooltip.style.display = "none";
+}
+
 /* ======================
    UPGRADE DATA
 ====================== */
@@ -208,7 +403,7 @@ function upgradeCost(base, level){
    SALARY HELPERS
 ====================== */
 function getGuardSalaryPerSec(){
-  return guards.length * 1; // unchanged per your request
+  return guards.length * 1;
 }
 
 function getShopSalaryPerSec(){
@@ -239,31 +434,55 @@ function buildShopUI(){
 
     const div = document.createElement("div");
     div.className="shopBlock";
+
     div.innerHTML = `
-      <b>${shop.name}</b>
-
-      <div class="small">
-        Product Protection: Level ${shop.protection}<br>
-        ${protectionText}
+      <div class="row">
+        <b>${shop.name}</b>
       </div>
-      ${shop.protection < maxLevel ?
-        `<button onclick="upgradeProtection(${i})">
-          Upgrade Protection (£${protectionCost})
-        </button>` : "<div class='small'>Max Level</div>"}
 
-      <div class="small">
-        Store Management: Level ${shop.management}<br>
-        ${managementText}
+      <div class="row" style="margin-top:6px;">
+        <div class="small">
+          Product Protection: Level ${shop.protection}<br>
+          ${protectionText}
+        </div>
+        <button class="infoBtn"
+          onmouseenter="showTooltip(event,'protection')"
+          onmousemove="moveTooltip(event)"
+          onmouseleave="hideTooltip()"
+          onclick="showInfoPanel('protection','${shop.name} — Protection')"
+        >ℹ</button>
       </div>
-      ${shop.management < maxLevel ?
-        `<button onclick="upgradeManagement(${i})">
-          Upgrade Management (£${managementCost})
-        </button>` : "<div class='small'>Max Level</div>"}
 
-      <div class="small">
+      ${
+        shop.protection < maxLevel
+        ? `<button onclick="upgradeProtection(${i})">Upgrade Protection (£${protectionCost})</button>`
+        : "<div class='small'>Max Level</div>"
+      }
+
+      <div class="row" style="margin-top:10px;">
+        <div class="small">
+          Store Management: Level ${shop.management}<br>
+          ${managementText}
+        </div>
+        <button class="infoBtn"
+          onmouseenter="showTooltip(event,'management')"
+          onmousemove="moveTooltip(event)"
+          onmouseleave="hideTooltip()"
+          onclick="showInfoPanel('management','${shop.name} — Management')"
+        >ℹ</button>
+      </div>
+
+      ${
+        shop.management < maxLevel
+        ? `<button onclick="upgradeManagement(${i})">Upgrade Management (£${managementCost})</button>`
+        : "<div class='small'>Max Level</div>"
+      }
+
+      <div class="small" style="margin-top:6px;">
         Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
       </div>
     `;
+
     container.appendChild(div);
   });
 }
@@ -299,7 +518,6 @@ function upgradeProtection(i){
   money -= cost;
   shop.protection++;
 
-  // Staff-based protection levels
   if(shop.protection === 3) shop.salary += 0.5;
   if(shop.protection === 4) shop.salary += 0.8;
 
@@ -317,7 +535,6 @@ function upgradeManagement(i){
   money -= cost;
   shop.management++;
 
-  // Staff-heavy management levels
   if(shop.management === 3) shop.salary += 0.4;
   if(shop.management === 4) shop.salary += 0.6;
 
@@ -343,16 +560,20 @@ function startWave(){
   if(gamePhase !== "planning") return;
 
   waveStats = {
-  mallRevenue: 0,
-  theftLoss: 0,
-  thefts: 0,
-  offenders: new Set(),
-  salaryPaid: 0
-};
+    mallRevenue: 0,
+    theftLoss: 0,
+    thefts: 0,
+    offenders: new Set(),
+    salaryPaid: 0
+  };
 
   gamePhase = "wave";
   waveTimer = waveLength;
+
+  // default view to Wave Overview when wave starts
+  setRightMode("wave");
 }
+
 function endWave(){
   gamePhase = "planning";
   waveNumber++;
@@ -390,7 +611,6 @@ function spawnVisitor(){
   let type;
   const r = Math.random();
 
-  // Wave-based mix
   if(waveNumber === 1){
     type = r < 0.60 ? "ordinary"
          : r < 0.90 ? "opportunist"
@@ -434,7 +654,7 @@ function spawnVisitor(){
     theftsCommitted:0,
     maxThefts:p.maxThefts,
 
-    visitedShops:{},   // ← comma added here
+    visitedShops:{},
     finished:false
   });
 }
@@ -446,7 +666,6 @@ function update(dt){
   if(gamePhase === "wave"){
     waveTimer -= dt;
 
-    // Only spawn during first 60% of wave
     if(waveTimer > waveLength * 0.4){
       if(Math.random() < 0.04) spawnVisitor();
     }
@@ -457,18 +676,12 @@ function update(dt){
       checkShops(v);
     });
 
-    // Salary only during wave (guards + staff-based upgrades)
     const salaryThisFrame = getTotalSalaryPerSec() * dt;
+    money -= salaryThisFrame;
+    waveStats.salaryPaid = (waveStats.salaryPaid || 0) + salaryThisFrame;
 
-money -= salaryThisFrame;
+    visitors = visitors.filter(v => !v.finished);
 
-// Track salary in analytics
-waveStats.salaryPaid = (waveStats.salaryPaid || 0) + salaryThisFrame;
-
-    // Remove finished visitors
-   visitors = visitors.filter(v => !v.finished);
-
-    // Only end wave when timer expired AND no visitors remain
     if(waveTimer <= 0 && visitors.length === 0){
       endWave();
     }
@@ -476,13 +689,9 @@ waveStats.salaryPaid = (waveStats.salaryPaid || 0) + salaryThisFrame;
 }
 
 function moveVisitor(v, dt){
-
-  // If already finished, do nothing
   if(v.finished) return;
 
   const targetIndex = v.pathIndex + 1;
-
-  // If no more nodes, mark finished
   if(targetIndex >= path.length){
     v.finished = true;
     return;
@@ -496,17 +705,16 @@ function moveVisitor(v, dt){
   const step = v.speed * dt;
 
   if(dist <= step){
-    // Snap exactly to node to prevent drift
     v.x = next.x;
     v.y = next.y;
     v.pathIndex++;
-  }
-  else{
+  } else {
     v.x += dx / dist * step;
     v.y += dy / dist * step;
   }
 }
-  function applySecurity(v){
+
+function applySecurity(v){
   v.R = cctvLevel * 5;
   v.S = v.baseS;
 
@@ -519,65 +727,42 @@ function moveVisitor(v, dt){
 
   v.S = Math.max(0, v.S);
 }
+
 function checkShops(v){
-
   shops.forEach((shop, index)=>{
-
-    // Skip if already visited this shop
     if(v.visitedShops[index]) return;
 
-    // If visitor is within shop interaction radius
     if(Math.hypot(v.x - shop.x, v.y - shop.y) < 60){
-
       v.visitedShops[index] = true;
 
-      // Calculate Opportunity & Motivation adjustments
       v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
       v.M -= shop.management * 2;
 
       const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
-      /* ======================
-         THEFT OCCURS
-      ====================== */
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
-
         const theftLoss = shop.value * 0.75;
 
         money -= theftLoss;
         reputation -= 2;
 
-        // 🔴 Track analytics
         waveStats.theftLoss += theftLoss;
         waveStats.thefts++;
         waveStats.offenders.add(v);
 
         v.theftsCommitted++;
-
       }
-
-      /* ======================
-         LEGITIMATE PURCHASE
-      ====================== */
       else if(v.S > v.M){
+        const mallShare = shop.value * 0.30;
 
-      const mallShare = shop.value * 0.30;
+        money += mallShare;
+        reputation += 1;
 
-      money += mallShare;
-      reputation += 1;
-
-      // 🟢 Track analytics (ONLY what mall earns)
-      waveStats.mallRevenue += mallShare;
-
-}
-
-
+        waveStats.mallRevenue += mallShare;
+      }
     }
-
   });
-
 }
-
 
 /* ======================
    DRAW
@@ -589,13 +774,10 @@ function draw(){
   ctx.lineWidth=40;
   ctx.beginPath();
   ctx.moveTo(path[0].x, path[0].y);
-
-for(let i = 1; i < path.length; i++){
-  ctx.lineTo(path[i].x, path[i].y);
-}
-
-ctx.stroke();
-
+  for(let i = 1; i < path.length; i++){
+    ctx.lineTo(path[i].x, path[i].y);
+  }
+  ctx.stroke();
 
   shops.forEach(shop=>{
     ctx.fillStyle="#333";
@@ -630,43 +812,39 @@ ctx.stroke();
   const totalSalary = (gamePhase === "wave") ? getTotalSalaryPerSec() : 0;
   document.getElementById("salaryDisplay").innerText =
     totalSalary.toFixed(1) + "/sec";
-if(gamePhase === "wave"){
 
-  const net =
-    waveStats.mallRevenue
-    - waveStats.theftLoss
-    - waveStats.salaryPaid;
+  // Right panel: wave view updates live (only if wave tab selected or wave mode visible)
+  if(gamePhase === "wave"){
+    const net = waveStats.mallRevenue - waveStats.theftLoss - waveStats.salaryPaid;
 
-  let netColor = "#aaa";
-  if(net > 0) netColor = "#4caf50";
-  else if(net < 0) netColor = "#e53935";
+    let netColor = "#aaa";
+    if(net > 0) netColor = "#4caf50";
+    else if(net < 0) netColor = "#e53935";
 
-  document.getElementById("analyticsPanel").innerHTML = `
-    <b>Revenue</b><br>
-    Mall Revenue: £${waveStats.mallRevenue.toFixed(0)}<br><br>
+    document.getElementById("analyticsPanel").innerHTML = `
+      <b>Revenue</b><br>
+      Mall Revenue: £${waveStats.mallRevenue.toFixed(0)}<br><br>
 
-    <b>Costs</b><br>
-    Salary: £${waveStats.salaryPaid.toFixed(0)}<br>
-    Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br><br>
+      <b>Costs</b><br>
+      Salary: £${waveStats.salaryPaid.toFixed(0)}<br>
+      Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br><br>
 
-    <b>Crime</b><br>
-    Thefts: ${waveStats.thefts}<br>
-    Offenders: ${waveStats.offenders.size}<br><br>
+      <b>Crime</b><br>
+      Thefts: ${waveStats.thefts}<br>
+      Offenders: ${waveStats.offenders.size}<br><br>
 
-    <div style="font-size:16px; color:${netColor}">
-      Net: £${net.toFixed(0)}
-    </div>
-  `;
-
-} else {
-
-  document.getElementById("analyticsPanel").innerHTML =
-    "Start a wave to see results.";
+      <div style="font-size:16px; color:${netColor}">
+        Net: £${net.toFixed(0)}
+      </div>
+    `;
+  } else {
+    document.getElementById("analyticsPanel").innerHTML = "Start a wave to see results.";
+  }
 }
 
-
-}
-
+/* ======================
+   GAME LOOP
+====================== */
 let last=0;
 function loop(t){
   const dt=(t-last)/1000;
@@ -676,11 +854,11 @@ function loop(t){
   requestAnimationFrame(loop);
 }
 
+// Build UI and start
 buildShopUI();
 buildCCTVUI();
+setRightMode("wave");
 loop(0);
 </script>
 </body>
 </html>
-
-
