@@ -3,77 +3,42 @@
 <head>
 <meta charset="utf-8">
 <title>Mall Manager – Phase 3</title>
-
 <style>
-body{
+body {
   margin:0;
   background:#111;
   color:#eee;
   font-family:Arial;
-
   display:flex;
-  height:100vh;
-  overflow:hidden;   /* prevents scroll + layout break */
 }
 
-/* LEFT PANEL */
+#game { flex:1; display:block; }
+
 #ui {
-  flex:0 0 280px;
+  width:320px;
   background:#1b1b1b;
-  border-right:1px solid #333;
-  padding:12px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-}
-
-#shopControls {
-  overflow-y:auto;
-  flex:1;
-}
-
-/* CENTER CANVAS */
-#game{
-  flex:1;
-  background:#111;
-}
-
-/* RIGHT PANEL */
-#analyticsBox{
-  flex:0 0 240px;
-  background:#1a1a1a;
   border-left:1px solid #333;
   padding:12px;
   overflow-y:auto;
 }
 
-#analyticsBox h3{
-  margin:0 0 8px 0;
-}
-
-button{
+button {
   width:100%;
   margin-top:6px;
   padding:6px;
 }
 
-.stat{ margin:4px 0; }
-
-.shopBlock{
+.stat { margin:4px 0; }
+.shopBlock {
   margin-top:12px;
   border-top:1px solid #333;
   padding-top:8px;
 }
-
-.small{
-  font-size:12px;
-  color:#aaa;
-}
+.small { font-size:12px; color:#aaa; }
 </style>
 </head>
 <body>
 
-<!-- LEFT PANEL -->
 <div id="ui">
   <div class="stat">💰 Money: <span id="money"></span></div>
   <div class="stat">⭐ Reputation: <span id="rep"></span></div>
@@ -89,89 +54,20 @@ button{
   <b>Global Surveillance</b>
   <div id="cctvPanel"></div>
   <button onclick="addGuard()">Place Guard (£150)</button>
-<button onclick="toggleInfo('guards','info_guards')">ℹ</button>
-<div id="info_guards"></div>
 
   <div id="shopControls"></div>
 </div>
 
-<!-- CENTER -->
 <canvas id="game"></canvas>
-
-<!-- RIGHT PANEL -->
-<div id="analyticsBox">
-  <h3>Wave Overview</h3>
-  <div id="analyticsPanel" class="small"></div>
-</div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// world size in CSS pixels (what you draw in)
-let worldW = 0;
-let worldH = 0;
-
-let margin = 0;
-let corridorWidth = 0;
-
-let path = [];
-const shops = [
-  {name:"Electronics", x:0,y:0,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
-  {name:"Clothing", x:0,y:0,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
-  {name:"Jewellery", x:0,y:0,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
-  {name:"Food Court", x:0,y:0,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
-];
-
-function updatePath(){
-  // Add extra padding to ensure the stroke doesn't get clipped
-  const strokePadding = 10;
-  const inset = margin + (corridorWidth * 0.5) + strokePadding;
-
-  path = [
-    { x: inset,         y: inset },
-    { x: worldW-inset,  y: inset },
-    { x: worldW-inset,  y: worldH-inset },
-    { x: inset,         y: worldH-inset },
-    { x: inset,         y: inset }
-  ];
-}
-
-
-function layoutShops(){
-  const strokePadding = 10;
-  const inset = margin + (corridorWidth * 0.5) + strokePadding;
-  
-  // Add extra offset for shops so they don't overlap with edge
-  const shopOffset = 60;
-
-  shops[0].x = worldW * 0.50; shops[0].y = inset;                    // top middle (Electronics)
-  shops[1].x = worldW - inset - shopOffset; shops[1].y = worldH * 0.50; // right middle (Clothing)
-  shops[2].x = worldW * 0.50; shops[2].y = worldH - inset;           // bottom middle (Jewellery)
-  shops[3].x = inset + shopOffset; shops[3].y = worldH * 0.50;       // left middle (Food Court)
-}
-
 function resizeCanvas(){
-
-  const rect = canvas.getBoundingClientRect();
-
-  worldW = rect.width;
-  worldH = rect.height;
-
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width  = Math.round(worldW * dpr);
-  canvas.height = Math.round(worldH * dpr);
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  margin = Math.min(worldW, worldH) * 0.12;
-  corridorWidth = Math.min(worldW, worldH) * 0.05;
-
-  updatePath();
-  layoutShops();
+  canvas.width = window.innerWidth - 320;
+  canvas.height = window.innerHeight;
 }
-  
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
@@ -190,17 +86,13 @@ let waveNumber = 1;
 let cctvLevel = 0;
 const maxLevel = 4;
 
-/* ======================
-   WAVE STATS (ANALYTICS)
-====================== */
-let waveStats = {
-  grossSales: 0,
-  mallIncome: 0,
-  theftLoss: 0,
-  theftCount: 0,
-  offenderSet: new Set(),
-  salaryPaid: 0
-};
+const path = [
+  {x:200,y:200},  // Entrance
+  {x:900,y:200},
+  {x:900,y:700},
+  {x:200,y:700},
+  {x:200,y:200}   // Exit (back to entrance)
+];
 
 /* ======================
    UPGRADE DATA
@@ -255,7 +147,12 @@ const protectionLevels = {
 /* ======================
    SHOPS
 ====================== */
-
+const shops = [
+  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
+  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
+  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
+  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
+];
 
 const guards = [];
 let visitors = [];
@@ -271,11 +168,13 @@ function upgradeCost(base, level){
    SALARY HELPERS
 ====================== */
 function getGuardSalaryPerSec(){
-  return guards.length * 1; // unchanged
+  return guards.length * 1; // unchanged per your request
 }
+
 function getShopSalaryPerSec(){
   return shops.reduce((sum, s) => sum + (s.salary || 0), 0);
 }
+
 function getTotalSalaryPerSec(){
   return getGuardSalaryPerSec() + getShopSalaryPerSec();
 }
@@ -283,28 +182,6 @@ function getTotalSalaryPerSec(){
 /* ======================
    UI BUILDERS
 ====================== */
-  function toggleInfo(key, elementId){
-
-  const container = document.getElementById(elementId);
-
-  // If already open, close it
-  if(container.innerHTML !== ""){
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = `
-    <div style="
-      background:#222;
-      padding:8px;
-      margin-top:6px;
-      border:1px solid #333;
-      font-size:12px;
-    ">
-      ${infoText[key]}
-    </div>
-  `;
-}
 function buildShopUI(){
   const container = document.getElementById("shopControls");
   container.innerHTML = "";
@@ -322,7 +199,6 @@ function buildShopUI(){
 
     const div = document.createElement("div");
     div.className="shopBlock";
-
     div.innerHTML = `
       <b>${shop.name}</b>
 
@@ -330,41 +206,24 @@ function buildShopUI(){
         Product Protection: Level ${shop.protection}<br>
         ${protectionText}
       </div>
-
-      ${
-        shop.protection < maxLevel
-        ? `
-          <button onclick="upgradeProtection(${i})">
-            Upgrade Protection (£${protectionCost})
-          </button>
-          <button onclick="toggleInfo('protection','info_p_${i}')">ℹ</button>
-          <div id="info_p_${i}"></div>
-        `
-        : "<div class='small'>Max Level</div>"
-      }
+      ${shop.protection < maxLevel ?
+        `<button onclick="upgradeProtection(${i})">
+          Upgrade Protection (£${protectionCost})
+        </button>` : "<div class='small'>Max Level</div>"}
 
       <div class="small">
         Store Management: Level ${shop.management}<br>
         ${managementText}
       </div>
-
-      ${
-        shop.management < maxLevel
-        ? `
-          <button onclick="upgradeManagement(${i})">
-            Upgrade Management (£${managementCost})
-          </button>
-          <button onclick="toggleInfo('management','info_m_${i}')">ℹ</button>
-          <div id="info_m_${i}"></div>
-        `
-        : "<div class='small'>Max Level</div>"
-      }
+      ${shop.management < maxLevel ?
+        `<button onclick="upgradeManagement(${i})">
+          Upgrade Management (£${managementCost})
+        </button>` : "<div class='small'>Max Level</div>"}
 
       <div class="small">
         Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
       </div>
     `;
-
     container.appendChild(div);
   });
 }
@@ -380,16 +239,9 @@ function buildCCTVUI(){
       CCTV Level ${cctvLevel}<br>
       ${text}
     </div>
-
-    ${
-      cctvLevel < maxLevel
-      ? `
-        <button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>
-        <button onclick="toggleInfo('cctv','info_cctv')">ℹ</button>
-        <div id="info_cctv"></div>
-      `
-      : "<div class='small'>Max Level</div>"
-    }
+    ${cctvLevel < maxLevel ?
+      `<button onclick="upgradeCCTV()">Upgrade CCTV (£${cost})</button>`
+      : "<div class='small'>Max Level</div>"}
   `;
 }
 
@@ -443,89 +295,17 @@ function upgradeCCTV(){
   cctvLevel++;
   buildCCTVUI();
 }
-/* ======================
-   INFO SYSTEM TEXT
-====================== */
-
-const infoText = {
-  protection: `
-  <b>Product Protection</b><br>
-  Reduces <b>Opportunity</b>.<br><br>
-  • Makes items harder to steal<br>
-  • Strong against opportunists<br>
-  • Less effective against highly determined offenders<br><br>
-  Works by increasing effort required.
-  `,
-
-  management: `
-  <b>Store Management</b><br>
-  Reduces <b>Motivation</b>.<br><br>
-  • Increases social awareness<br>
-  • Staff presence discourages theft<br>
-  • Builds informal guardianship<br><br>
-  Works by reducing temptation.
-  `,
-
-  cctv: `
-  <b>Surveillance (CCTV)</b><br>
-  Increases <b>Perceived Risk</b>.<br><br>
-  • Offenders feel more likely to be caught<br>
-  • Strong against risk-sensitive individuals<br>
-  • Weaker against highly motivated offenders<br><br>
-  Works by increasing perceived detection.
-  `,
-
-  guards: `
-  <b>Security Guards</b><br>
-  Strongly increases <b>Local Risk</b>.<br><br>
-  • Powerful deterrent within area<br>
-  • Reduces repeat offending<br>
-  • Expensive to maintain<br><br>
-  Works through visible authority presence.
-  `
-};
 
 /* ======================
    PHASE CONTROL
 ====================== */
 function startWave(){
   if(gamePhase !== "planning") return;
-
-  // reset wave analytics
-  waveStats = {
-    grossSales: 0,
-    mallIncome: 0,
-    theftLoss: 0,
-    theftCount: 0,
-    offenderSet: new Set(),
-    salaryPaid: 0
-  };
-
   gamePhase = "wave";
   waveTimer = waveLength;
 }
 
 function endWave(){
-  const net = waveStats.mallIncome - waveStats.salaryPaid - waveStats.theftLoss;
-
-  alert(
-`Wave ${waveNumber} Results
-
-Revenue
-  Sales: £${waveStats.grossSales.toFixed(0)}
-  Mall Share: £${waveStats.mallIncome.toFixed(0)}
-
-Crime
-  Theft Loss: £${waveStats.theftLoss.toFixed(0)}
-  Thefts: ${waveStats.theftCount}
-  Offenders: ${waveStats.offenderSet.size}
-
-Costs
-  Salary: £${waveStats.salaryPaid.toFixed(0)}
-
-Net Result: £${net.toFixed(0)}`
-  );
-
   gamePhase = "planning";
   waveNumber++;
   document.getElementById("waveNum").innerText = waveNumber;
@@ -539,10 +319,11 @@ canvas.addEventListener("click", function(e){
   if(!placingGuard || gamePhase !== "planning") return;
 
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  guards.push({ x, y, radius:130 });
+  guards.push({
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+    radius:130
+  });
 
   money -= 150;
   placingGuard = false;
@@ -561,12 +342,21 @@ function spawnVisitor(){
   let type;
   const r = Math.random();
 
+  // Wave-based mix
   if(waveNumber === 1){
-    type = r < 0.60 ? "ordinary" : r < 0.90 ? "opportunist" : "determined";
-  } else if(waveNumber === 2){
-    type = r < 0.55 ? "ordinary" : r < 0.85 ? "opportunist" : "determined";
-  } else {
-    type = r < 0.45 ? "ordinary" : r < 0.75 ? "opportunist" : "determined";
+    type = r < 0.60 ? "ordinary"
+         : r < 0.90 ? "opportunist"
+         : "determined";
+  }
+  else if(waveNumber === 2){
+    type = r < 0.55 ? "ordinary"
+         : r < 0.85 ? "opportunist"
+         : "determined";
+  }
+  else{
+    type = r < 0.45 ? "ordinary"
+         : r < 0.75 ? "opportunist"
+         : "determined";
   }
 
   const profiles = {
@@ -578,9 +368,8 @@ function spawnVisitor(){
   const p = profiles[type];
 
   visitors.push({
-    x: path[0].x,
-    y: path[0].y,
-
+    x:200,
+    y:200,
     pathIndex:0,
     speed:60,
     type:type,
@@ -597,7 +386,7 @@ function spawnVisitor(){
     theftsCommitted:0,
     maxThefts:p.maxThefts,
 
-    visitedShops:{},
+    visitedShops:{},   // ← comma added here
     finished:false
   });
 }
@@ -609,7 +398,7 @@ function update(dt){
   if(gamePhase === "wave"){
     waveTimer -= dt;
 
-    // spawn only during first 60% of wave
+    // Only spawn during first 60% of wave
     if(waveTimer > waveLength * 0.4){
       if(Math.random() < 0.04) spawnVisitor();
     }
@@ -620,15 +409,13 @@ function update(dt){
       checkShops(v);
     });
 
-    // salary tracking + payment (wave only)
-    const salaryFrame = getTotalSalaryPerSec() * dt;
-    waveStats.salaryPaid += salaryFrame;
-    money -= salaryFrame;
+    // Salary only during wave (guards + staff-based upgrades)
+    money -= getTotalSalaryPerSec() * dt;
 
-    // remove finished visitors
-    visitors = visitors.filter(v => !v.finished);
+    // Remove finished visitors
+   visitors = visitors.filter(v => !v.finished);
 
-    // end wave only when timer ended AND no visitors remain
+    // Only end wave when timer expired AND no visitors remain
     if(waveTimer <= 0 && visitors.length === 0){
       endWave();
     }
@@ -636,9 +423,13 @@ function update(dt){
 }
 
 function moveVisitor(v, dt){
+
+  // If already finished, do nothing
   if(v.finished) return;
 
   const targetIndex = v.pathIndex + 1;
+
+  // If no more nodes, mark finished
   if(targetIndex >= path.length){
     v.finished = true;
     return;
@@ -648,19 +439,21 @@ function moveVisitor(v, dt){
   const dx = next.x - v.x;
   const dy = next.y - v.y;
   const dist = Math.hypot(dx, dy);
+
   const step = v.speed * dt;
 
   if(dist <= step){
+    // Snap exactly to node to prevent drift
     v.x = next.x;
     v.y = next.y;
     v.pathIndex++;
-  } else {
+  }
+  else{
     v.x += dx / dist * step;
     v.y += dy / dist * step;
   }
 }
-
-function applySecurity(v){
+  function applySecurity(v){
   v.R = cctvLevel * 5;
   v.S = v.baseS;
 
@@ -673,7 +466,6 @@ function applySecurity(v){
 
   v.S = Math.max(0, v.S);
 }
-
 function checkShops(v){
   shops.forEach((shop, index)=>{
     if(v.visitedShops[index]) return;
@@ -688,27 +480,24 @@ function checkShops(v){
 
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
         const theftLoss = shop.value * 0.75;
-
-        waveStats.theftLoss += theftLoss;
-        waveStats.theftCount++;
-        waveStats.offenderSet.add(v);
-
         money -= theftLoss;
         reputation -= 2;
-        v.theftsCommitted++;
+        v.theftsCommitted++; // IMPORTANT: count thefts
 
-        // If you re-enable emboldening later, do it carefully:
-        // if(v.type === "determined"){ v.M = Math.min(v.M + 3, 45); }
-
-      } else if(v.S > v.M){
-        const mallShare = shop.value * 0.30;
-
-        waveStats.grossSales += shop.value;
-        waveStats.mallIncome += mallShare;
-
-        money += mallShare;
-        reputation += 1;
+        // Emboldening placeholder (refine later)
+        if(v.type === "determined"){
+          v.M += 5;
+        }
       }
+      else if(v.S > v.M){
+
+  // Mall only earns percentage of shop sales
+  const mallShare = shop.value * 0.30;
+  money += mallShare;
+
+  reputation += 1;
+}
+
     }
   });
 }
@@ -717,25 +506,20 @@ function checkShops(v){
    DRAW
 ====================== */
 function draw(){
-ctx.save();
-ctx.setTransform(1, 0, 0, 1, 0, 0);
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.restore();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // path
-ctx.strokeStyle = "#444";
-ctx.lineWidth = 5;
-ctx.lineJoin = "round";
-ctx.lineCap = "round";
+  ctx.strokeStyle="#444";
+  ctx.lineWidth=40;
+  ctx.beginPath();
+  ctx.moveTo(path[0].x, path[0].y);
 
-ctx.beginPath();
-ctx.moveTo(path[0].x, path[0].y);
 for(let i = 1; i < path.length; i++){
   ctx.lineTo(path[i].x, path[i].y);
 }
+
 ctx.stroke();
 
-  // shops
+
   shops.forEach(shop=>{
     ctx.fillStyle="#333";
     ctx.fillRect(shop.x-50,shop.y-30,100,60);
@@ -743,18 +527,15 @@ ctx.stroke();
     ctx.fillText(shop.name,shop.x-40,shop.y);
   });
 
-  // guards
   guards.forEach(g=>{
     ctx.strokeStyle="rgba(0,200,255,0.3)";
     ctx.beginPath();
     ctx.arc(g.x,g.y,g.radius,0,Math.PI*2);
     ctx.stroke();
-
     ctx.fillStyle="#0ff";
     ctx.fillRect(g.x-6,g.y-6,12,12);
   });
 
-  // visitors
   visitors.forEach(v=>{
     ctx.fillStyle=v.type==="ordinary"?"#0f0"
                : v.type==="opportunist"?"#ff0":"#f00";
@@ -763,7 +544,6 @@ ctx.stroke();
     ctx.fill();
   });
 
-  // top stats
   document.getElementById("money").innerText = Math.round(money);
   document.getElementById("rep").innerText = Math.round(reputation);
   document.getElementById("visitors").innerText = visitors.length;
@@ -773,41 +553,8 @@ ctx.stroke();
   const totalSalary = (gamePhase === "wave") ? getTotalSalaryPerSec() : 0;
   document.getElementById("salaryDisplay").innerText =
     totalSalary.toFixed(1) + "/sec";
-
-  // analytics panel (right)
-  if(gamePhase === "wave"){
-    const net = waveStats.mallIncome - waveStats.salaryPaid - waveStats.theftLoss;
-
-    let netColor = "#aaa";
-    if(net > 0) netColor = "#4caf50";
-    else if(net < 0) netColor = "#e53935";
-    else netColor = "#ffb300";
-
-    document.getElementById("analyticsPanel").innerHTML = `
-      🟢 <b>Revenue</b><br>
-      Sales: £${waveStats.grossSales.toFixed(0)}<br>
-      Mall Share: £${waveStats.mallIncome.toFixed(0)}<br><br>
-
-      🔴 <b>Crime</b><br>
-      Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br>
-      Thefts: ${waveStats.theftCount}<br>
-      Offenders: ${waveStats.offenderSet.size}<br><br>
-
-      🔵 <b>Costs</b><br>
-      Salary: £${waveStats.salaryPaid.toFixed(0)}<br><br>
-
-      <div style="font-size:16px; color:${netColor}">
-        Net: £${net.toFixed(0)}
-      </div>
-    `;
-  } else {
-    document.getElementById("analyticsPanel").innerHTML = "<span class='small'>Start a wave to see live results.</span>";
-  }
 }
 
-/* ======================
-   GAME LOOP
-====================== */
 let last=0;
 function loop(t){
   const dt=(t-last)/1000;
@@ -817,11 +564,9 @@ function loop(t){
   requestAnimationFrame(loop);
 }
 
-// Build UI and start
 buildShopUI();
 buildCCTVUI();
 loop(0);
 </script>
-
 </body>
 </html>
