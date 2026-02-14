@@ -601,7 +601,11 @@ canvas.addEventListener("click", function(e){
     }
   }
 
-  // 2️⃣ GUARD PLACEMENT SECOND
+  // 2️⃣ If no shop was clicked, deselect
+  selectedShopIndex = null;
+  buildSelectedShopUI();
+
+  // 3️⃣ GUARD PLACEMENT SECOND
   if(placingGuard && gamePhase === "planning"){
     guards.push({
       x: x,
@@ -992,6 +996,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
