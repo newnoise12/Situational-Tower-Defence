@@ -675,21 +675,37 @@ function upgradeProtection(i){
 
 
 function upgradeManagement(i){
-  if(gamePhase !== "planning") return;
-  const shop = shops[i];
-  if(shop.management >= maxLevel) return;
 
-  const cost = upgradeCost(80, shop.management);
+  if(gamePhase !== "planning") return;
+
+  const shop = shops[i];
+  if(!shop) return;
+
+  const track = storeUpgradeData[shop.type].management;
+  if(!track) return;
+
+  if(shop.managementTier >= track.length - 1) return;
+
+  const nextTier = shop.managementTier + 1;
+  const measure = track[nextTier];
+
+  const cost = measure.cost;
   if(money < cost) return;
 
   money -= cost;
-  shop.management++;
 
-  if(shop.management === 3) shop.salary += 0.4;
-  if(shop.management === 4) shop.salary += 0.6;
+  // Apply tier
+  shop.managementTier = nextTier;
+
+  // Apply motivation reduction effect
+  shop.managementEffect = measure.motivationDelta;
+
+  // Apply salary impact
+  shop.salary += measure.salaryDelta;
 
   buildSelectedShopUI();
 }
+
 
 function upgradeCCTV(){
   if(gamePhase !== "planning") return;
@@ -1347,6 +1363,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
