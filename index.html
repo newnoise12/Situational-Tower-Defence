@@ -795,11 +795,11 @@ if(v.fleeing){
 
   }
 }
-  function decideNextNode(v){
+ function decideNextNode(v){
 
   const current = nodes[v.currentNode];
 
-  // If at an entrance and already returned once, exit
+  // Exit if returned to entrance after hub
   if(
     (v.currentNode === "entranceMain" || v.currentNode === "entranceSide") &&
     v.visitedHub
@@ -808,13 +808,27 @@ if(v.fleeing){
     return;
   }
 
-  // HUB logic (decision node)
-  if(current.type === "decision"){
+  // 🔴 FLEEING LOGIC FIRST
+  if(v.timeInMall > 18 && v.theftsCommitted > 0){
+    v.isFleeing = true;
 
-    v.visitedHub = true;
+    // Head to nearest exit immediately
+    const distMain = Math.hypot(
+      v.x - nodes.entranceMain.x,
+      v.y - nodes.entranceMain.y
+    );
 
-    // --- circulation probability ---
-    let pShop = 0.5;
+    const distSide = Math.hypot(
+      v.x - nodes.entranceSide.x,
+      v.y - nodes.entranceSide.y
+    );
+
+    v.targetNode = distMain < distSide
+      ? "entranceMain"
+      : "entranceSide";
+
+    return;
+  }
 
 // Time pressure builds over ~20 seconds
 const pressure = Math.min(v.timeInMall / 20, 0.4);
@@ -1127,6 +1141,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
