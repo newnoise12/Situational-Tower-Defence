@@ -432,7 +432,14 @@ const shops = [
   {name:"Jewellery",   node:"south", value:100, baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
   {name:"Food Court",  node:"food", value:20, baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
 ];
+// ======================
+// SHOP LOOKUP MAP (nodeId → shop)
+// ======================
+const shopByNode = {};
 
+shops.forEach(shop => {
+  shopByNode[shop.node] = shop;
+});
 const guards = [];
 let visitors = [];
 
@@ -889,7 +896,8 @@ if(current.type === "decision"){
 
     // === VALUE WEIGHTING ===
     const weighted = pickFrom.map(nodeId=>{
-      const shop = shops.find(s => s.node === nodeId);
+      const shop = shopByNode[nodeId];
+      if(!shop) return { nodeId, weight: 1 };
 
       let weight = 1;
 
@@ -1206,6 +1214,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
