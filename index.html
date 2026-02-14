@@ -480,7 +480,11 @@ function buildSelectedShopUI(){
   }
 
   const shop = shops[selectedShopIndex];
+  const protectionTrack = storeUpgradeData[shop.type].protection;
+  const managementTrack = storeUpgradeData[shop.type].management;
 
+  const currentProtection = protectionTrack[shop.protectionTier];
+  const currentManagement = managementTrack[shop.managementTier];
   container.innerHTML = `
     <h4>${shop.name}</h4>
 
@@ -492,7 +496,7 @@ function buildSelectedShopUI(){
 
     <div class="row">
       <div class="small">
-        Protection Level: ${shop.protectionTier}
+        Protection: ${currentProtection.name}
       </div>
       <button class="infoBtn"
         onmouseenter="showTooltip(event,'protection')"
@@ -508,7 +512,7 @@ function buildSelectedShopUI(){
 
     <div class="row" style="margin-top:8px;">
       <div class="small">
-        Management Level: ${shop.management}
+        Management: ${currentManagement.name}
       </div>
       <button class="infoBtn"
         onmouseenter="showTooltip(event,'management')"
@@ -632,27 +636,43 @@ const storeUpgradeData = {
    UPGRADES
 ====================== */
 function upgradeProtection(i){
+
   if(gamePhase !== "planning") return;
 
   const shop = shops[i];
-  const track = storeUpgradeData[shop.type].protection;
+  if(!shop) return;
 
+  const track = storeUpgradeData[shop.type].protection;
+  if(!track) return;
+
+  // Already max tier?
   if(shop.protectionTier >= track.length - 1) return;
 
   const nextTier = shop.protectionTier + 1;
-  const cost = 100 * nextTier;
+  const measure = track[nextTier];
+
+  const cost = measure.cost;   // 👈 use real cost from upgrade data
 
   if(money < cost) return;
 
   money -= cost;
 
-  const measure = track[nextTier];
-
+  // Apply tier change
   shop.protectionTier = nextTier;
+
+  // Apply security effect
+  shop.baseOpportunity += measure.opportunityDelta;
+
+  // Apply salary change (can be positive or negative)
   shop.salary += measure.salaryDelta;
 
+  // Prevent weird negative opportunity
+  shop.baseOpportunity = Math.max(0, shop.baseOpportunity);
+
+  // Rebuild UI so user sees update
   buildSelectedShopUI();
 }
+
 
 function upgradeManagement(i){
   if(gamePhase !== "planning") return;
@@ -1327,6 +1347,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
