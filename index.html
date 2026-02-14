@@ -130,7 +130,8 @@ let waveStats = {
   mallRevenue: 0,
   theftLoss: 0,
   thefts: 0,
-  offenders: new Set()
+  offenders: new Set(),
+  salaryPaid: 0
 };
   
 /* ======================
@@ -345,7 +346,8 @@ function startWave(){
   mallRevenue: 0,
   theftLoss: 0,
   thefts: 0,
-  offenders: new Set()
+  offenders: new Set(),
+  salaryPaid: 0
 };
 
   gamePhase = "wave";
@@ -456,7 +458,12 @@ function update(dt){
     });
 
     // Salary only during wave (guards + staff-based upgrades)
-    money -= getTotalSalaryPerSec() * dt;
+    const salaryThisFrame = getTotalSalaryPerSec() * dt;
+
+money -= salaryThisFrame;
+
+// Track salary in analytics
+waveStats.salaryPaid = (waveStats.salaryPaid || 0) + salaryThisFrame;
 
     // Remove finished visitors
    visitors = visitors.filter(v => !v.finished);
@@ -625,14 +632,30 @@ ctx.stroke();
     totalSalary.toFixed(1) + "/sec";
 if(gamePhase === "wave"){
 
+  const net =
+    waveStats.mallRevenue
+    - waveStats.theftLoss
+    - waveStats.salaryPaid;
+
+  let netColor = "#aaa";
+  if(net > 0) netColor = "#4caf50";
+  else if(net < 0) netColor = "#e53935";
+
   document.getElementById("analyticsPanel").innerHTML = `
     <b>Revenue</b><br>
-   Mall Revenue: £${waveStats.mallRevenue.toFixed(0)}<br><br>
+    Mall Revenue: £${waveStats.mallRevenue.toFixed(0)}<br><br>
+
+    <b>Costs</b><br>
+    Salary: £${waveStats.salaryPaid.toFixed(0)}<br>
+    Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br><br>
 
     <b>Crime</b><br>
-    Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br>
     Thefts: ${waveStats.thefts}<br>
-    Offenders: ${waveStats.offenders.size}
+    Offenders: ${waveStats.offenders.size}<br><br>
+
+    <div style="font-size:16px; color:${netColor}">
+      Net: £${net.toFixed(0)}
+    </div>
   `;
 
 } else {
@@ -640,6 +663,7 @@ if(gamePhase === "wave"){
   document.getElementById("analyticsPanel").innerHTML =
     "Start a wave to see results.";
 }
+
 
 }
 
@@ -658,4 +682,5 @@ loop(0);
 </script>
 </body>
 </html>
+
 
