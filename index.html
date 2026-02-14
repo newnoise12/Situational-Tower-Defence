@@ -1036,13 +1036,28 @@ ctx.fillText("SIDE", nodes.entranceSide.x, nodes.entranceSide.y);
     ctx.fillRect(g.x-6,g.y-6,12,12);
   });
 
-  visitors.forEach(v=>{
-    ctx.fillStyle=v.type==="ordinary"?"#0f0"
-               : v.type==="opportunist"?"#ff0":"#f00";
-    ctx.beginPath();
-    ctx.arc(v.x,v.y,8,0,Math.PI*2);
-    ctx.fill();
-  });
+  visitors.forEach(v => {
+
+  // Fleeing overrides everything
+  if(v.isFleeing){
+    ctx.fillStyle = "#00e5ff";   // bright cyan for fleeing
+  }
+  else if(v.type === "ordinary"){
+    ctx.fillStyle = "#0f0";
+  }
+  else if(v.type === "opportunist"){
+    ctx.fillStyle = "#ff0";
+  }
+  else {
+    ctx.fillStyle = "#f00";
+  }
+
+  ctx.beginPath();
+  ctx.arc(v.x, v.y, 8, 0, Math.PI*2);
+  ctx.fill();
+
+});
+
 
   document.getElementById("money").innerText = Math.round(money);
   document.getElementById("rep").innerText = Math.round(reputation);
@@ -1112,6 +1127,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
