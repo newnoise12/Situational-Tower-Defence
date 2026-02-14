@@ -585,12 +585,16 @@ function endWave(){
 ====================== */
 canvas.addEventListener("click", function(e){
 
+  console.log("Click detected");
+  console.log("placingGuard:", placingGuard);
+
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  // 1️⃣ If placing guard, do that first
   if(placingGuard && gamePhase === "planning"){
+    console.log("Placing guard");
+
     guards.push({
       x: x,
       y: y,
@@ -599,24 +603,8 @@ canvas.addEventListener("click", function(e){
 
     money -= 150;
     placingGuard = false;
-    return; // stop here
+    return;
   }
-
-  // 2️⃣ Otherwise handle shop selection
-  for(let i = 0; i < shops.length; i++){
-    const shop = shops[i];
-    const node = nodes[shop.node];
-
-    if(Math.hypot(x - node.x, y - node.y) < 60){
-      selectedShopIndex = i;
-      buildSelectedShopUI();
-      return;
-    }
-  }
-
-  // 3️⃣ If clicked empty space, deselect
-  selectedShopIndex = null;
-  buildSelectedShopUI();
 
 });
 
@@ -998,6 +986,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
