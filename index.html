@@ -411,10 +411,13 @@ const nodes = {
    SHOPS
 ====================== */
 const shops = [
-  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0,rep:50},
-  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0,rep:50},
-  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0,rep:50},
-  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0,rep:50}
+  const shops = [
+  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0, theftCount:0, rep:50},
+  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0, theftCount:0, rep:50},
+  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0, theftCount:0, rep:50},
+  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0, theftCount:0, rep:50}
+];
+
 ];
 
 const guards = [];
@@ -880,7 +883,8 @@ function checkShops(v){
 
         money -= theftLoss;
         reputation -= 2;
-
+        shop.theftCount++;
+      
         waveStats.theftLoss += theftLoss;
         waveStats.thefts++;
         waveStats.theftsByType[v.type]++;   // NEW
@@ -1053,6 +1057,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
