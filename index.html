@@ -879,11 +879,55 @@ function decideNextNode(v){
       });
 
       const pickFrom = unvisited.length ? unvisited : shopNodes;
-      const randomShop = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+      const shopNodes = current.connections.filter(
+  id => nodes[id].type === "shop"
+);
 
-      v.targetNode = randomShop;
-      return;
-    }
+const unvisited = shopNodes.filter((nodeId)=>{
+  const idx = shops.findIndex(s => s.node === nodeId);
+  return idx === -1 ? true : !v.visitedShops[idx];
+});
+
+const pickFrom = unvisited.length ? unvisited : shopNodes;
+
+// NEW WEIGHTED PICK
+const weighted = pickFrom.map(nodeId => {
+  const shop = shops.find(s => s.node === nodeId);
+
+  let weight = 1;
+
+  // High value stores attract more browsing
+  weight += shop.value / 50;
+
+  // Determined offenders prefer high value
+  if(v.type === "determined"){
+    weight += shop.value / 40;
+  }
+
+  // Reduce weight if already had theft there
+  if(shop.theftCount > 0){
+    weight -= 0.3;
+  }
+
+  return { nodeId, weight };
+});
+
+// Weighted random selection
+let totalWeight = weighted.reduce((sum, s) => sum + s.weight, 0);
+let r = Math.random() * totalWeight;
+
+let chosen = weighted[0].nodeId;
+
+for(let item of weighted){
+  r -= item.weight;
+  if(r <= 0){
+    chosen = item.nodeId;
+    break;
+  }
+}
+
+v.targetNode = chosen;
+return;
 
     // === EXIT DECISION ===
 
@@ -1176,6 +1220,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
