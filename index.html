@@ -815,7 +815,6 @@ function moveVisitor(v, dt){
   }
 }
 
-// ✅ This should be a separate function at the top level
 function decideNextNode(v){
   const current = nodes[v.currentNode];
 
@@ -959,13 +958,13 @@ if(Math.random() < pReturnOriginal){
     return;
   }
 
-  // If at shop → return to hub
+  // === SHOP → RETURN TO HUB ===
   if(current.type === "shop"){
     v.targetNode = "hub";
     return;
   }
 
-  // Default: go to hub
+  // === DEFAULT FALLBACK ===
   v.targetNode = "hub";
 }
 
@@ -1226,6 +1225,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
