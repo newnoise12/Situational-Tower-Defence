@@ -392,21 +392,36 @@ const protectionLevels = {
 ====================== */
 
 const nodes = {
-  entrance: { id:"entrance", x:150, y:450, type:"transit", connections:["hub"] },
+  entranceMain: { 
+    id:"entranceMain", 
+    x:120, 
+    y:450, 
+    type:"transit", 
+    connections:["hub"] 
+  },
+
+  entranceSide: { 
+    id:"entranceSide", 
+    x:1120, 
+    y:450, 
+    type:"transit", 
+    connections:["hub"] 
+  },
 
   hub: {
     id:"hub",
     x:600,
     y:450,
     type:"decision",
-    connections:["entrance","north","east","south","west"]
+    connections:["entranceMain","entranceSide","north","east","south","west"]
   },
 
   north: { id:"north", x:600, y:150, type:"shop", connections:["hub"] },
-  east:  { id:"east",  x:1050,y:450, type:"shop", connections:["hub"] },
+  east:  { id:"east",  x:1000,y:450, type:"shop", connections:["hub"] },
   south: { id:"south", x:600, y:750, type:"shop", connections:["hub"] },
-  west: { id:"west", x:150, y:750, type:"shop", connections:["hub"] }
+  west:  { id:"west",  x:200, y:750, type:"shop", connections:["hub"] }
 };
+
 /* ======================
    SHOPS
 ====================== */
@@ -688,13 +703,17 @@ function spawnVisitor(){
 
   const p = profiles[type];
 
-  visitors.push({
-  x: nodes.entrance.x,
-  y: nodes.entrance.y,
+ const spawnNode = Math.random() < 0.7 
+  ? "entranceMain" 
+  : "entranceSide";
 
-  currentNode: "entrance",
+visitors.push({
+  x: nodes[spawnNode].x,
+  y: nodes[spawnNode].y,
+
+  currentNode: spawnNode,
   targetNode: "hub",
-
+  
   speed: 60,
   type: type,
 
@@ -777,11 +796,14 @@ function moveVisitor(v, dt){
   const current = nodes[v.currentNode];
 
   // If at entrance and already returned, exit
-  if(v.currentNode === "entrance" && v.visitedHub){
-    v.finished = true;
-    return;
-  }
-
+  if(
+  (v.currentNode === "entranceMain" || 
+   v.currentNode === "entranceSide") 
+  && v.visitedHub
+){
+  v.finished = true;
+  return;
+}
   // HUB logic (decision node)
   if(current.type === "decision"){
 
@@ -819,8 +841,23 @@ function moveVisitor(v, dt){
     return;
   }
 
-  // Otherwise go back to entrance
-  v.targetNode = "entrance";
+  // Otherwise go back to nearest entrance
+if(v.currentNode === "hub"){
+
+  const distMain = Math.hypot(
+    v.x - nodes.entranceMain.x,
+    v.y - nodes.entranceMain.y
+  );
+
+  const distSide = Math.hypot(
+    v.x - nodes.entranceSide.x,
+    v.y - nodes.entranceSide.y
+  );
+
+  v.targetNode = distMain < distSide 
+    ? "entranceMain" 
+    : "entranceSide";
+
   return;
 }
 
@@ -934,7 +971,27 @@ function draw(){
     }
   });
 });
+ctx.shadowBlur = 0;
+ctx.shadowColor = "transparent";
+ctx.font = "12px Arial";
+ctx.textAlign = "center";
+// MAIN ENTRANCE
+ctx.fillStyle = "#2e7d32"; // green tone
+ctx.beginPath();
+ctx.arc(nodes.entranceMain.x, nodes.entranceMain.y, 35, 0, Math.PI*2);
+ctx.fill();
 
+ctx.fillStyle = "#fff";
+ctx.fillText("MAIN", nodes.entranceMain.x - 20, nodes.entranceMain.y + 5);
+  
+  // SIDE ENTRANCE
+ctx.fillStyle = "#455a64"; // cooler grey-blue
+ctx.beginPath();
+ctx.arc(nodes.entranceSide.x, nodes.entranceSide.y, 25, 0, Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle = "#fff";
+ctx.fillText("SIDE", nodes.entranceSide.x - 18, nodes.entranceSide.y + 5);
 
   // === Draw shops at their node positions ===
   shops.forEach((shop, i)=>{
@@ -1054,6 +1111,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
