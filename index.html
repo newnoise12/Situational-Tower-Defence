@@ -764,7 +764,11 @@ function update(dt){
 }
 
 function moveVisitor(v, dt){
+let currentSpeed = v.speed;
 
+if(v.fleeing){
+  currentSpeed *= 1.3;
+}
   if(v.finished) return;
 
   const target = nodes[v.targetNode];
@@ -772,7 +776,7 @@ function moveVisitor(v, dt){
   const dx = target.x - v.x;
   const dy = target.y - v.y;
   const dist = Math.hypot(dx, dy);
-  const step = v.speed * dt;
+  const step = currentSpeed * dt;
 
   // If close enough, snap to node
   if(dist <= step){
@@ -847,8 +851,14 @@ pShop = Math.max(0.1, Math.min(0.85, pShop));
     const distMain = Math.hypot(v.x - nodes.entranceMain.x, v.y - nodes.entranceMain.y);
     const distSide = Math.hypot(v.x - nodes.entranceSide.x, v.y - nodes.entranceSide.y);
 
-    v.targetNode = (distMain < distSide) ? "entranceMain" : "entranceSide";
-    return;
+    v.targetNode = distMain < distSide 
+  ? "entranceMain" 
+  : "entranceSide";
+
+// If fleeing after theft → sprint
+if(v.theftsCommitted > 0){
+  v.fleeing = true;
+}
   }
 
   // If at shop, go back to hub
@@ -1102,6 +1112,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
