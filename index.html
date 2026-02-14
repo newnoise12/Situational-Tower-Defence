@@ -196,6 +196,8 @@ let money = 600;
 let reputation = 50;
 let placingGuard = false;
 let selectedShopIndex = null;
+let hoveredShopIndex = null;
+
 
 let gamePhase = "planning";
 let waveTimer = 0;
@@ -590,6 +592,8 @@ function endWave(){
   placingGuard = true;
   canvas.style.cursor = "crosshair";
 }
+
+// CLICK HANDLER
 canvas.addEventListener("click", function(e){
 
   const rect = canvas.getBoundingClientRect();
@@ -606,8 +610,8 @@ canvas.addEventListener("click", function(e){
 
     money -= 150;
     placingGuard = false;
-canvas.style.cursor = "default";
-    return; // stop here
+    canvas.style.cursor = "default";
+    return;
   }
 
   // 2️⃣ SHOP SELECTION
@@ -626,6 +630,28 @@ canvas.style.cursor = "default";
   selectedShopIndex = null;
   buildSelectedShopUI();
 });
+
+// MOUSEMOVE HANDLER (SEPARATE)
+canvas.addEventListener("mousemove", function(e){
+
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  hoveredShopIndex = null;
+
+  for(let i = 0; i < shops.length; i++){
+    const shop = shops[i];
+    const node = nodes[shop.node];
+
+    if(Math.hypot(x - node.x, y - node.y) < 60){
+      hoveredShopIndex = i;
+      break;
+    }
+  }
+
+});
+
 
 
 
@@ -914,23 +940,33 @@ function draw(){
   const node = nodes[shop.node];
 
   const isSelected = (i === selectedShopIndex);
+  const isHovered = (i === hoveredShopIndex);
 
-  // 🔵 Shop base
-  ctx.fillStyle = isSelected ? "#555" : "#333";
+  let fill = "#333";
+  if(isHovered) fill = "#444";
+  if(isSelected) fill = "#555";
+
+  // 🔴 Crime heat glow
+  if(shop.theftCount > 0){
+    const intensity = Math.min(shop.theftCount * 5, 40);
+    ctx.shadowColor = "rgba(255,0,0,0.7)";
+    ctx.shadowBlur = intensity;
+  }
+
+  ctx.fillStyle = fill;
   ctx.fillRect(node.x - 50, node.y - 30, 100, 60);
 
-  // 🔵 Selection highlight ring
+  ctx.shadowBlur = 0;
+
   if(isSelected){
     ctx.strokeStyle = "#4caf50";
     ctx.lineWidth = 4;
     ctx.strokeRect(node.x - 55, node.y - 35, 110, 70);
   }
 
-  // 🔵 Label
   ctx.fillStyle = "#fff";
   ctx.fillText(shop.name, node.x - 40, node.y);
 });
-
 
   guards.forEach(g=>{
     ctx.strokeStyle="rgba(0,200,255,0.3)";
@@ -1017,6 +1053,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
