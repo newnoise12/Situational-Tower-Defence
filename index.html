@@ -805,7 +805,7 @@ if(v.isFleeing){
 
     v.currentNode = v.targetNode;
 
-    function decideNextNode(v){
+function decideNextNode(v){
 
   const current = nodes[v.currentNode];
 
@@ -820,6 +820,7 @@ if(v.isFleeing){
 
   // 🔴 FLEEING LOGIC FIRST
   if(v.timeInMall > 18 && v.theftsCommitted > 0){
+
     v.isFleeing = true;
 
     const distMain = Math.hypot(
@@ -839,22 +840,18 @@ if(v.isFleeing){
     return;
   }
 
-  // === HUB DECISION LOGIC ===
+  // === HUB DECISION ONLY ===
   if(current.type === "decision"){
 
     v.visitedHub = true;
 
-    // ✅ YOU WERE MISSING THIS LINE
     let pShop = 0.5;
 
-    // Time pressure
     const pressure = Math.min(v.timeInMall / 20, 0.4);
     pShop -= pressure;
 
-    // Offenders circulate more
     if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
 
-    // Personality
     if(v.type === "determined") pShop += 0.1;
     if(v.type === "ordinary")   pShop -= 0.1;
 
@@ -866,16 +863,17 @@ if(v.isFleeing){
         id => nodes[id].type === "shop"
       );
 
-      const unvisited = shopNodes.filter((nodeId)=>{
+      const unvisited = shopNodes.filter(nodeId=>{
         const idx = shops.findIndex(s => s.node === nodeId);
         return idx === -1 ? true : !v.visitedShops[idx];
       });
 
       const pickFrom = unvisited.length ? unvisited : shopNodes;
-      const randomShop =
-        pickFrom[Math.floor(Math.random() * pickFrom.length)];
 
-      v.targetNode = randomShop;
+      v.targetNode = pickFrom[
+        Math.floor(Math.random() * pickFrom.length)
+      ];
+
       return;
     }
 
@@ -903,6 +901,7 @@ if(v.isFleeing){
     return;
   }
 
+  // Fallback
   v.targetNode = "hub";
 }
 
@@ -1162,6 +1161,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
