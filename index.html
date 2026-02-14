@@ -589,23 +589,7 @@ canvas.addEventListener("click", function(e){
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  // 1️⃣ SHOP SELECTION FIRST
-  for(let i = 0; i < shops.length; i++){
-    const shop = shops[i];
-    const node = nodes[shop.node];
-
-    if(Math.hypot(x - node.x, y - node.y) < 60){
-      selectedShopIndex = i;
-      buildSelectedShopUI();
-      return; // stop here — don't place guard
-    }
-  }
-
-  // 2️⃣ If no shop was clicked, deselect
-  selectedShopIndex = null;
-  buildSelectedShopUI();
-
-  // 3️⃣ GUARD PLACEMENT SECOND
+  // 1️⃣ If placing guard, do that first
   if(placingGuard && gamePhase === "planning"){
     guards.push({
       x: x,
@@ -615,9 +599,27 @@ canvas.addEventListener("click", function(e){
 
     money -= 150;
     placingGuard = false;
+    return; // stop here
   }
 
+  // 2️⃣ Otherwise handle shop selection
+  for(let i = 0; i < shops.length; i++){
+    const shop = shops[i];
+    const node = nodes[shop.node];
+
+    if(Math.hypot(x - node.x, y - node.y) < 60){
+      selectedShopIndex = i;
+      buildSelectedShopUI();
+      return;
+    }
+  }
+
+  // 3️⃣ If clicked empty space, deselect
+  selectedShopIndex = null;
+  buildSelectedShopUI();
+
 });
+
 
 /* ======================
    VISITOR LOGIC
@@ -996,6 +998,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
