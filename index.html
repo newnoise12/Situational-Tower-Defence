@@ -591,28 +591,40 @@ function endWave(){
 }
 canvas.addEventListener("click", function(e){
 
-  console.log("Click detected");
-  console.log("placingGuard:", placingGuard);
-
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
+  // 1️⃣ GUARD PLACEMENT FIRST
   if(placingGuard && gamePhase === "planning"){
-    console.log("Placing guard");
-
     guards.push({
       x: x,
       y: y,
-      radius:130
+      radius: 130
     });
 
     money -= 150;
     placingGuard = false;
-    return;
+    return; // stop here
   }
 
+  // 2️⃣ SHOP SELECTION
+  for(let i = 0; i < shops.length; i++){
+    const shop = shops[i];
+    const node = nodes[shop.node];
+
+    if(Math.hypot(x - node.x, y - node.y) < 60){
+      selectedShopIndex = i;
+      buildSelectedShopUI();
+      return;
+    }
+  }
+
+  // 3️⃣ CLICKED EMPTY SPACE → DESELECT
+  selectedShopIndex = null;
+  buildSelectedShopUI();
 });
+
 
 
 /* ======================
@@ -992,6 +1004,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
