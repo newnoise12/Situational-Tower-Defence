@@ -411,13 +411,10 @@ const nodes = {
    SHOPS
 ====================== */
 const shops = [
-  const shops = [
-  const shops = [
-  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
-
+  {name:"Electronics", node:"north", value:70,  baseOpportunity:25, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Clothing",    node:"east",  value:40,  baseOpportunity:20, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Jewellery",   node:"south", value:100, baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Food Court",  node:"hub",   value:20,  baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
 ];
 
 const guards = [];
@@ -560,6 +557,7 @@ function upgradeCCTV(){
 function startWave(){
   if(gamePhase !== "planning") return;
 
+  // reset shop heat each wave
   shops.forEach(shop => shop.theftCount = 0);
 
   waveStats = {
@@ -568,21 +566,12 @@ function startWave(){
     thefts: 0,
     offenders: new Set(),
     salaryPaid: 0,
-
     visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
-    theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
+    theftsByType: { ordinary: 0, opportunist: 0, determined: 0 }
   };
 
   gamePhase = "wave";
   waveTimer = waveLength;
-
-  setRightMode("wave");
-}
-
-  gamePhase = "wave";
-  waveTimer = waveLength;
-
-  // default view to Wave Overview when wave starts
   setRightMode("wave");
 }
 
@@ -1065,6 +1054,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
