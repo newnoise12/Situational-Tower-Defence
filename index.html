@@ -714,7 +714,8 @@ visitors.push({
   
   speed: 60,
   type: type,
-
+  timeInMall: 0,
+  
   baseS: p.S,
   M: p.M,
   S: p.S,
@@ -744,6 +745,7 @@ function update(dt){
     }
 
     visitors.forEach(v=>{
+      v.timeInMall += dt;
       moveVisitor(v,dt);
       applySecurity(v);
       checkShops(v);
@@ -808,13 +810,21 @@ function moveVisitor(v, dt){
     v.visitedHub = true;
 
     // --- circulation probability ---
-    let pShop = 0.45;
+    let pShop = 0.5;
 
-    if(v.theftsCommitted < v.maxThefts) pShop += 0.20;
-    if(v.type === "determined") pShop += 0.15;
-    if(v.type === "ordinary")   pShop -= 0.10;
+// Time pressure builds over ~20 seconds
+const pressure = Math.min(v.timeInMall / 20, 0.4);
+pShop -= pressure;
 
-    pShop = Math.max(0.05, Math.min(0.85, pShop));
+// Offenders circulate more
+if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
+
+// Personality influence
+if(v.type === "determined") pShop += 0.1;
+if(v.type === "ordinary")   pShop -= 0.1;
+
+// Clamp to safe bounds
+pShop = Math.max(0.1, Math.min(0.85, pShop));
 
     // visit a shop?
     if(Math.random() < pShop){
@@ -839,7 +849,7 @@ function moveVisitor(v, dt){
 
     v.targetNode = (distMain < distSide) ? "entranceMain" : "entranceSide";
     return;
-  } // ✅ <-- this closing brace was missing / in the wrong place
+  }
 
   // If at shop, go back to hub
   if(current.type === "shop"){
@@ -1092,6 +1102,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
