@@ -783,11 +783,12 @@ function update(dt){
 }
 
 function moveVisitor(v, dt){
-let currentSpeed = v.speed;
+  let currentSpeed = v.speed;
 
-if(v.isFleeing){
-  currentSpeed *= 1.3;
-}
+  if(v.isFleeing){
+    currentSpeed *= 1.3;
+  }
+  
   if(v.finished) return;
 
   const target = nodes[v.targetNode];
@@ -799,14 +800,21 @@ if(v.isFleeing){
 
   // If close enough, snap to node
   if(dist <= step){
-
     v.x = target.x;
     v.y = target.y;
-
     v.currentNode = v.targetNode;
+    
+    // ✅ Call the separate function here
+    decideNextNode(v);
 
+  } else {
+    v.x += dx / dist * step;
+    v.y += dy / dist * step;
+  }
+}
+
+// ✅ This should be a separate function at the top level
 function decideNextNode(v){
-
   const current = nodes[v.currentNode];
 
   // Exit if returned to entrance after hub
@@ -818,9 +826,8 @@ function decideNextNode(v){
     return;
   }
 
-  // 🔴 FLEEING LOGIC
+  // 🔴 FLEEING LOGIC FIRST
   if(v.timeInMall > 18 && v.theftsCommitted > 0){
-
     v.isFleeing = true;
 
     const distMain = Math.hypot(
@@ -840,41 +847,39 @@ function decideNextNode(v){
     return;
   }
 
-  // =====================
-  // HUB DECISION BLOCK
-  // =====================
+  // === HUB DECISION LOGIC ===
   if(current.type === "decision"){
-
     v.visitedHub = true;
 
     let pShop = 0.5;
 
+    // Time pressure
     const pressure = Math.min(v.timeInMall / 20, 0.4);
     pShop -= pressure;
 
+    // Offenders circulate more
     if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
+
+    // Personality
     if(v.type === "determined") pShop += 0.1;
     if(v.type === "ordinary")   pShop -= 0.1;
 
     pShop = Math.max(0.1, Math.min(0.85, pShop));
 
     if(Math.random() < pShop){
-
       const shopNodes = current.connections.filter(
         id => nodes[id].type === "shop"
       );
 
-      const unvisited = shopNodes.filter(nodeId=>{
+      const unvisited = shopNodes.filter((nodeId)=>{
         const idx = shops.findIndex(s => s.node === nodeId);
         return idx === -1 ? true : !v.visitedShops[idx];
       });
 
       const pickFrom = unvisited.length ? unvisited : shopNodes;
+      const randomShop = pickFrom[Math.floor(Math.random() * pickFrom.length)];
 
-      v.targetNode = pickFrom[
-        Math.floor(Math.random() * pickFrom.length)
-      ];
-
+      v.targetNode = randomShop;
       return;
     }
 
@@ -894,7 +899,7 @@ function decideNextNode(v){
       : "entranceSide";
 
     return;
-  }  // ✅ THIS WAS MISSING
+  }
 
   // If at shop → return to hub
   if(current.type === "shop"){
@@ -902,7 +907,7 @@ function decideNextNode(v){
     return;
   }
 
-  // Fallback
+  // Default: go to hub
   v.targetNode = "hub";
 }
 
@@ -1163,6 +1168,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
