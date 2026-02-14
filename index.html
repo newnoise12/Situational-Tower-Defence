@@ -412,11 +412,11 @@ const nodes = {
 ====================== */
 const shops = [
   const shops = [
-  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0, theftCount:0, rep:50},
-  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0, theftCount:0, rep:50},
-  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0, theftCount:0, rep:50},
-  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0, theftCount:0, rep:50}
-];
+  const shops = [
+  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
+  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
 
 ];
 
@@ -560,16 +560,24 @@ function upgradeCCTV(){
 function startWave(){
   if(gamePhase !== "planning") return;
 
-  waveStats = {
-  mallRevenue: 0,
-  theftLoss: 0,
-  thefts: 0,
-  offenders: new Set(),
-  salaryPaid: 0,
+  shops.forEach(shop => shop.theftCount = 0);
 
-  visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
-  theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
-};
+  waveStats = {
+    mallRevenue: 0,
+    theftLoss: 0,
+    thefts: 0,
+    offenders: new Set(),
+    salaryPaid: 0,
+
+    visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
+    theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
+  };
+
+  gamePhase = "wave";
+  waveTimer = waveLength;
+
+  setRightMode("wave");
+}
 
   gamePhase = "wave";
   waveTimer = waveLength;
@@ -879,20 +887,20 @@ function checkShops(v){
       ====================== */
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
 
-        const theftLoss = shop.value * 0.75;
+  const theftLoss = shop.value * 0.75;
 
-        money -= theftLoss;
-        reputation -= 2;
-        shop.theftCount++;
-      
-        waveStats.theftLoss += theftLoss;
-        waveStats.thefts++;
-        waveStats.theftsByType[v.type]++;   // NEW
-        waveStats.offenders.add(v);
+  money -= theftLoss;
+  reputation -= 2;
 
-        v.theftsCommitted++;
+  waveStats.theftLoss += theftLoss;
+  waveStats.thefts++;
+  waveStats.theftsByType[v.type]++;
+  waveStats.offenders.add(v);
 
-      }
+  shop.theftCount++;   // 🔴 ADD THIS
+
+  v.theftsCommitted++;
+}
 
       /* ======================
          LEGITIMATE PURCHASE
@@ -1057,6 +1065,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
