@@ -745,7 +745,7 @@ function update(dt){
     }
 
     visitors.forEach(v=>{
-      v.timeInMall += dt;
+      v.timeInMall = (v.timeInMall || 0) + dt;
       moveVisitor(v,dt);
       applySecurity(v);
       checkShops(v);
@@ -1141,6 +1141,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
