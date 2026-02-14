@@ -218,7 +218,11 @@ let waveStats = {
   theftLoss: 0,
   thefts: 0,
   offenders: new Set(),
-  salaryPaid: 0
+  salaryPaid: 0,
+
+  // NEW: experiment visibility
+  visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
+  theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
 };
 
 /* ======================
@@ -579,12 +583,15 @@ function startWave(){
   if(gamePhase !== "planning") return;
 
   waveStats = {
-    mallRevenue: 0,
-    theftLoss: 0,
-    thefts: 0,
-    offenders: new Set(),
-    salaryPaid: 0
-  };
+  mallRevenue: 0,
+  theftLoss: 0,
+  thefts: 0,
+  offenders: new Set(),
+  salaryPaid: 0,
+
+  visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
+  theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
+};
 
   gamePhase = "wave";
   waveTimer = waveLength;
@@ -644,8 +651,10 @@ function spawnVisitor(){
     type = r < 0.45 ? "ordinary"
          : r < 0.75 ? "opportunist"
          : "determined";
+ 
   }
-
+   waveStats.visitorTypes[type]++;
+  
   const profiles = {
     ordinary:{ M:10, S:40, risk:1.5, effort:1.2, maxThefts:1 },
     opportunist:{ M:25, S:25, risk:1.0, effort:1.0, maxThefts:2 },
@@ -751,23 +760,44 @@ function moveVisitor(v, dt){
   // HUB logic (decision node)
   if(current.type === "decision"){
 
-    v.visitedHub = true;
+  v.visitedHub = true;
 
-    // 50% chance to visit a shop
-    if(Math.random() < 0.5){
+  // --- NEW: circulation probability ---
+  // Base desire to keep moving through the mall
+  let pShop = 0.45;
 
-      const shopNodes = current.connections.filter(id => nodes[id].type === "shop");
+  // If offender still "active" (can steal more), they tend to circulate more
+  if(v.theftsCommitted < v.maxThefts) pShop += 0.20;
 
-      const randomShop = shopNodes[Math.floor(Math.random() * shopNodes.length)];
+  // Determined offenders circulate more, ordinary less
+  if(v.type === "determined") pShop += 0.15;
+  if(v.type === "ordinary")   pShop -= 0.10;
 
-      v.targetNode = randomShop;
-      return;
-    }
+  // Clamp into safe range
+  pShop = Math.max(0.05, Math.min(0.85, pShop));
 
-    // Otherwise go back to entrance
-    v.targetNode = "entrance";
+  // Decide whether to visit another shop
+  if(Math.random() < pShop){
+
+    const shopNodes = current.connections.filter(id => nodes[id].type === "shop");
+
+    // OPTIONAL: avoid picking the same shop repeatedly by using visitedShops
+    const unvisited = shopNodes.filter((nodeId)=>{
+      const idx = shops.findIndex(s => s.node === nodeId);
+      return idx === -1 ? true : !v.visitedShops[idx];
+    });
+
+    const pickFrom = unvisited.length ? unvisited : shopNodes;
+    const randomShop = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+
+    v.targetNode = randomShop;
     return;
   }
+
+  // Otherwise go back to entrance
+  v.targetNode = "entrance";
+  return;
+}
 
   // If at shop, go back to hub
   if(current.type === "shop"){
@@ -828,6 +858,7 @@ function checkShops(v){
 
         waveStats.theftLoss += theftLoss;
         waveStats.thefts++;
+        waveStats.theftsByType[v.type]++;   // NEW
         waveStats.offenders.add(v);
 
         v.theftsCommitted++;
@@ -937,6 +968,15 @@ function draw(){
       <b>Crime</b><br>
       Thefts: ${waveStats.thefts}<br>
       Offenders: ${waveStats.offenders.size}<br><br>
+      <b>Visitors</b><br>
+      Ordinary: ${waveStats.visitorTypes.ordinary}<br>
+      Opportunist: ${waveStats.visitorTypes.opportunist}<br>
+      Determined: ${waveStats.visitorTypes.determined}<br><br>
+
+      <b>Thefts by type</b><br>
+      Ordinary: ${waveStats.theftsByType.ordinary}<br>
+      Opportunist: ${waveStats.theftsByType.opportunist}<br>
+      Determined: ${waveStats.theftsByType.determined}<br><br>
 
       <div style="font-size:16px; color:${netColor}">
         Net: £${net.toFixed(0)}
@@ -967,4 +1007,5 @@ loop(0);
 </script>
 </body>
 </html>
+
 
