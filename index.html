@@ -378,15 +378,34 @@ const protectionLevels = {
     "Cashless Payment Only"
   ]
 };
+/* ======================
+   MALL NODE GRAPH
+====================== */
 
+const nodes = {
+  entrance: { id:"entrance", x:150, y:450, type:"transit", connections:["hub"] },
+
+  hub: {
+    id:"hub",
+    x:600,
+    y:450,
+    type:"decision",
+    connections:["entrance","north","east","south","west"]
+  },
+
+  north: { id:"north", x:600, y:150, type:"shop", connections:["hub"] },
+  east:  { id:"east",  x:1050,y:450, type:"shop", connections:["hub"] },
+  south: { id:"south", x:600, y:750, type:"shop", connections:["hub"] },
+  west: { id:"west", x:150, y:750, type:"shop", connections:["hub"] }
+};
 /* ======================
    SHOPS
 ====================== */
 const shops = [
-  {name:"Electronics", x:550,y:200,value:70,baseOpportunity:25,protection:0,management:0,salary:0},
-  {name:"Clothing", x:900,y:450,value:40,baseOpportunity:20,protection:0,management:0,salary:0},
-  {name:"Jewellery", x:550,y:700,value:100,baseOpportunity:35,protection:0,management:0,salary:0},
-  {name:"Food Court", x:200,y:450,value:20,baseOpportunity:10,protection:0,management:0,salary:0}
+  {name:"Electronics", node:"north", value:70, baseOpportunity:25, protection:0, management:0, salary:0},
+  {name:"Clothing",    node:"east",  value:40, baseOpportunity:20, protection:0, management:0, salary:0},
+  {name:"Jewellery",   node:"south", value:100,baseOpportunity:35, protection:0, management:0, salary:0},
+  {name:"Food Court",  node:"hub",   value:20, baseOpportunity:10, protection:0, management:0, salary:0}
 ];
 
 const guards = [];
@@ -636,27 +655,30 @@ function spawnVisitor(){
   const p = profiles[type];
 
   visitors.push({
-    x:200,
-    y:200,
-    pathIndex:0,
-    speed:60,
-    type:type,
+  x: nodes.entrance.x,
+  y: nodes.entrance.y,
 
-    baseS:p.S,
-    M:p.M,
-    S:p.S,
-    O:20,
-    R:0,
+  currentNode: "entrance",
+  targetNode: "hub",
 
-    riskSensitivity:p.risk,
-    effortSensitivity:p.effort,
+  speed: 60,
+  type: type,
 
-    theftsCommitted:0,
-    maxThefts:p.maxThefts,
+  baseS: p.S,
+  M: p.M,
+  S: p.S,
+  O: 20,
+  R: 0,
 
-    visitedShops:{},
-    finished:false
-  });
+  riskSensitivity: p.risk,
+  effortSensitivity: p.effort,
+
+  theftsCommitted: 0,
+  maxThefts: p.maxThefts,
+
+  visitedShops: {},
+  finished: false
+});
 }
 
 /* ======================
@@ -689,29 +711,72 @@ function update(dt){
 }
 
 function moveVisitor(v, dt){
+
   if(v.finished) return;
 
-  const targetIndex = v.pathIndex + 1;
-  if(targetIndex >= path.length){
+  const target = nodes[v.targetNode];
+
+  const dx = target.x - v.x;
+  const dy = target.y - v.y;
+  const dist = Math.hypot(dx, dy);
+  const step = v.speed * dt;
+
+  // If close enough, snap to node
+  if(dist <= step){
+
+    v.x = target.x;
+    v.y = target.y;
+
+    v.currentNode = v.targetNode;
+
+    decideNextNode(v);
+
+  } else {
+
+    v.x += dx / dist * step;
+    v.y += dy / dist * step;
+
+  }
+}
+  function decideNextNode(v){
+
+  const current = nodes[v.currentNode];
+
+  // If at entrance and already returned, exit
+  if(v.currentNode === "entrance" && v.visitedHub){
     v.finished = true;
     return;
   }
 
-  const next = path[targetIndex];
-  const dx = next.x - v.x;
-  const dy = next.y - v.y;
-  const dist = Math.hypot(dx, dy);
+  // HUB logic (decision node)
+  if(current.type === "decision"){
 
-  const step = v.speed * dt;
+    v.visitedHub = true;
 
-  if(dist <= step){
-    v.x = next.x;
-    v.y = next.y;
-    v.pathIndex++;
-  } else {
-    v.x += dx / dist * step;
-    v.y += dy / dist * step;
+    // 50% chance to visit a shop
+    if(Math.random() < 0.5){
+
+      const shopNodes = current.connections.filter(id => nodes[id].type === "shop");
+
+      const randomShop = shopNodes[Math.floor(Math.random() * shopNodes.length)];
+
+      v.targetNode = randomShop;
+      return;
+    }
+
+    // Otherwise go back to entrance
+    v.targetNode = "entrance";
+    return;
   }
+
+  // If at shop, go back to hub
+  if(current.type === "shop"){
+    v.targetNode = "hub";
+    return;
+  }
+
+  // Default: go to hub
+  v.targetNode = "hub";
 }
 
 function applySecurity(v){
@@ -729,18 +794,33 @@ function applySecurity(v){
 }
 
 function checkShops(v){
+
   shops.forEach((shop, index)=>{
+
+    // Skip if already visited
     if(v.visitedShops[index]) return;
 
-    if(Math.hypot(v.x - shop.x, v.y - shop.y) < 60){
+    // Get node position for this shop
+    const node = nodes[shop.node];
+
+    // Detect proximity to node
+    const interactionRadius = 60;
+
+    if(Math.hypot(v.x - node.x, v.y - node.y) < interactionRadius){
+
       v.visitedShops[index] = true;
 
+      // Adjust opportunity & motivation
       v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
       v.M -= shop.management * 2;
 
       const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
+      /* ======================
+         THEFT
+      ====================== */
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
+
         const theftLoss = shop.value * 0.75;
 
         money -= theftLoss;
@@ -751,17 +831,27 @@ function checkShops(v){
         waveStats.offenders.add(v);
 
         v.theftsCommitted++;
+
       }
+
+      /* ======================
+         LEGITIMATE PURCHASE
+      ====================== */
       else if(v.S > v.M){
+
         const mallShare = shop.value * 0.30;
 
         money += mallShare;
         reputation += 1;
 
         waveStats.mallRevenue += mallShare;
+
       }
+
     }
+
   });
+
 }
 
 /* ======================
@@ -770,21 +860,36 @@ function checkShops(v){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.strokeStyle="#444";
-  ctx.lineWidth=40;
-  ctx.beginPath();
-  ctx.moveTo(path[0].x, path[0].y);
-  for(let i = 1; i < path.length; i++){
-    ctx.lineTo(path[i].x, path[i].y);
-  }
-  ctx.stroke();
+  // === Draw corridors (graph connections) ===
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 40;
+  ctx.lineCap = "round";
 
-  shops.forEach(shop=>{
-    ctx.fillStyle="#333";
-    ctx.fillRect(shop.x-50,shop.y-30,100,60);
-    ctx.fillStyle="#fff";
-    ctx.fillText(shop.name,shop.x-40,shop.y);
+ Object.values(nodes).forEach(node=>{
+  node.connections.forEach(targetId=>{
+    if(node.id < targetId){   // prevents duplicate drawing
+      const target = nodes[targetId];
+
+      ctx.beginPath();
+      ctx.moveTo(node.x, node.y);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+    }
   });
+});
+
+
+  // === Draw shops at their node positions ===
+  shops.forEach(shop=>{
+    const node = nodes[shop.node];
+
+    ctx.fillStyle = "#333";
+    ctx.fillRect(node.x-50, node.y-30, 100, 60);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillText(shop.name, node.x-40, node.y);
+  });
+
 
   guards.forEach(g=>{
     ctx.strokeStyle="rgba(0,200,255,0.3)";
@@ -862,3 +967,4 @@ loop(0);
 </script>
 </body>
 </html>
+
