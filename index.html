@@ -818,7 +818,7 @@ function decideNextNode(v){
     return;
   }
 
-  // 🔴 FLEEING LOGIC FIRST
+  // 🔴 FLEEING LOGIC
   if(v.timeInMall > 18 && v.theftsCommitted > 0){
 
     v.isFleeing = true;
@@ -840,7 +840,9 @@ function decideNextNode(v){
     return;
   }
 
-  // === HUB DECISION ONLY ===
+  // =====================
+  // HUB DECISION BLOCK
+  // =====================
   if(current.type === "decision"){
 
     v.visitedHub = true;
@@ -851,7 +853,6 @@ function decideNextNode(v){
     pShop -= pressure;
 
     if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
-
     if(v.type === "determined") pShop += 0.1;
     if(v.type === "ordinary")   pShop -= 0.1;
 
@@ -893,7 +894,7 @@ function decideNextNode(v){
       : "entranceSide";
 
     return;
-  }
+  }  // ✅ THIS WAS MISSING
 
   // If at shop → return to hub
   if(current.type === "shop"){
@@ -904,6 +905,7 @@ function decideNextNode(v){
   // Fallback
   v.targetNode = "hub";
 }
+
 
 function applySecurity(v){
   v.R = cctvLevel * 5;
@@ -1161,6 +1163,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
