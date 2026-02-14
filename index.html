@@ -888,15 +888,29 @@ function decideNextNode(v){
 
   let weight = 1;
 
-  weight += shop.value / 50;
+// 🟢 Reputation attraction (main driver)
+weight += shop.rep / 40;
 
-  if(v.type === "determined"){
-    weight += shop.value / 40;
-  }
+// 🟡 Value matters slightly
+weight += shop.value / 100;
 
-  if(shop.theftCount > 0){
-    weight -= 0.3;
-  }
+// 🔴 Determined offenders prefer high value stores
+if(v.type === "determined"){
+  weight += shop.value / 60;
+}
+
+// 🔵 Ordinary visitors prefer reputable shops
+if(v.type === "ordinary"){
+  weight += shop.rep / 60;
+}
+
+// 🟥 Reduce weight if recent crime heat
+if(shop.theftCount > 0){
+  weight -= shop.theftCount * 0.2;
+}
+
+// Prevent negative or zero weights
+weight = Math.max(0.1, weight);
 
   // Prevent negative weights
   weight = Math.max(0.1, weight);
@@ -1003,6 +1017,8 @@ function checkShops(v){
   waveStats.offenders.add(v);
 
   shop.theftCount++;   // 🔴 ADD THIS
+  shop.rep -= 2;
+  shop.rep = Math.max(0, shop.rep);
 
   v.theftsCommitted++;
 }
@@ -1018,7 +1034,8 @@ function checkShops(v){
         reputation += 1;
 
         waveStats.mallRevenue += mallShare;
-
+        shop.rep += 0.5;
+        shop.rep = Math.min(100, shop.rep);
       }
 
     }
@@ -1206,6 +1223,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
