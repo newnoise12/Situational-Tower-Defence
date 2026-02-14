@@ -816,9 +816,10 @@ function moveVisitor(v, dt){
 }
 
 function decideNextNode(v){
+
   const current = nodes[v.currentNode];
 
-  // Exit if returned to entrance after hub
+  // EXIT CHECK
   if(
     (v.currentNode === "entranceMain" || v.currentNode === "entranceSide") &&
     v.visitedHub
@@ -827,7 +828,7 @@ function decideNextNode(v){
     return;
   }
 
-  // 🔴 FLEEING LOGIC FIRST
+  // FLEE CHECK
   if(v.timeInMall > 18 && v.theftsCommitted > 0){
     v.isFleeing = true;
 
@@ -848,125 +849,95 @@ function decideNextNode(v){
     return;
   }
 
- // === HUB DECISION LOGIC ===
-if(current.type === "decision"){
-  v.visitedHub = true;
+  // HUB LOGIC
+  if(current.type === "decision"){
+    v.visitedHub = true;
 
-  let pShop = 0.5;
+    let pShop = 0.5;
 
-  // Time pressure
-  const pressure = Math.min(v.timeInMall / 20, 0.4);
-  pShop -= pressure;
+    const pressure = Math.min(v.timeInMall / 20, 0.4);
+    pShop -= pressure;
 
-  // Offenders circulate more
-  if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
+    if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
+    if(v.type === "determined") pShop += 0.1;
+    if(v.type === "ordinary")   pShop -= 0.1;
 
-  // Personality
-  if(v.type === "determined") pShop += 0.1;
-  if(v.type === "ordinary")   pShop -= 0.1;
+    pShop = Math.max(0.1, Math.min(0.85, pShop));
 
-  pShop = Math.max(0.1, Math.min(0.85, pShop));
+    if(Math.random() < pShop){
 
-  if(Math.random() < pShop){
+      const shopNodes = current.connections.filter(
+        id => nodes[id].type === "shop"
+      );
 
-    const shopNodes = current.connections.filter(
-      id => nodes[id].type === "shop"
-    );
+      const unvisited = shopNodes.filter(nodeId=>{
+        const idx = shops.findIndex(s => s.node === nodeId);
+        return idx === -1 ? true : !v.visitedShops[idx];
+      });
 
-    const unvisited = shopNodes.filter((nodeId)=>{
-      const idx = shops.findIndex(s => s.node === nodeId);
-      return idx === -1 ? true : !v.visitedShops[idx];
-    });
+      const pickFrom = unvisited.length ? unvisited : shopNodes;
 
-    const pickFrom = unvisited.length ? unvisited : shopNodes;
+      const weighted = pickFrom.map(nodeId=>{
+        const shop = shops.find(s => s.node === nodeId);
 
-    // === WEIGHTED PICK ===
-    const weighted = pickFrom.map(nodeId => {
-      const shop = shops.find(s => s.node === nodeId);
+        let weight = 1;
+        weight += shop.value / 50;
 
-      let weight = 1;
+        if(v.type === "determined"){
+          weight += shop.value / 40;
+        }
 
-      weight += shop.value / 50;
+        if(shop.theftCount > 0){
+          weight -= 0.3;
+        }
 
-      if(v.type === "determined"){
-        weight += shop.value / 40;
+        return { nodeId, weight };
+      });
+
+      let totalWeight = weighted.reduce((sum,s)=>sum+s.weight,0);
+      let r = Math.random() * totalWeight;
+
+      let chosen = weighted[0].nodeId;
+
+      for(let item of weighted){
+        r -= item.weight;
+        if(r <= 0){
+          chosen = item.nodeId;
+          break;
+        }
       }
 
-      if(shop.theftCount > 0){
-        weight -= 0.3;
-      }
-
-      return { nodeId, weight };
-    });
-
-    let totalWeight = weighted.reduce((sum, s) => sum + s.weight, 0);
-    let r = Math.random() * totalWeight;
-
-    let chosen = weighted[0].nodeId;
-
-    for(let item of weighted){
-      r -= item.weight;
-      if(r <= 0){
-        chosen = item.nodeId;
-        break;
-      }
+      v.targetNode = chosen;
+      return;
     }
 
-    v.targetNode = chosen;
+    const distMain = Math.hypot(
+      v.x - nodes.entranceMain.x,
+      v.y - nodes.entranceMain.y
+    );
+
+    const distSide = Math.hypot(
+      v.x - nodes.entranceSide.x,
+      v.y - nodes.entranceSide.y
+    );
+
+    v.targetNode = distMain < distSide
+      ? "entranceMain"
+      : "entranceSide";
+
     return;
   }
 
-  // Otherwise go to nearest entrance
-  const distMain = Math.hypot(
-    v.x - nodes.entranceMain.x,
-    v.y - nodes.entranceMain.y
-  );
-
-  const distSide = Math.hypot(
-    v.x - nodes.entranceSide.x,
-    v.y - nodes.entranceSide.y
-  );
-
-  v.targetNode = distMain < distSide
-    ? "entranceMain"
-    : "entranceSide";
-
-  return;
-}
-
-    // === EXIT DECISION ===
-
-// Base probability to return to original entrance
-let pReturnOriginal = 0.65;
-
-// Determined offenders less predictable
-if(v.type === "determined") pReturnOriginal = 0.5;
-
-// If long time in mall, more likely to use nearest exit
-if(v.timeInMall > 22) pReturnOriginal -= 0.2;
-
-// Clamp
-pReturnOriginal = Math.max(0.3, Math.min(0.8, pReturnOriginal));
-
-if(Math.random() < pReturnOriginal){
-  v.targetNode = v.spawnEntrance;
-} else {
-  v.targetNode = v.spawnEntrance === "entranceMain"
-    ? "entranceSide"
-    : "entranceMain";
-}
-    return;
-  }
-
-  // === SHOP → RETURN TO HUB ===
+  // SHOP → HUB
   if(current.type === "shop"){
     v.targetNode = "hub";
     return;
   }
 
-  // === DEFAULT FALLBACK ===
+  // DEFAULT
   v.targetNode = "hub";
 }
+
 
 function applySecurity(v){
   v.R = cctvLevel * 5;
@@ -1224,6 +1195,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
