@@ -427,11 +427,12 @@ const nodes = {
    SHOPS
 ====================== */
 const shops = [
-  {name:"Electronics", node:"north", value:70,  baseOpportunity:25, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Clothing",    node:"east",  value:40,  baseOpportunity:20, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Jewellery",   node:"south", value:100, baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Food Court",  node:"food", value:20, baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
+  {name:"Electronics", type:"Electronics", node:"north", value:70,  baseOpportunity:25, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0},
+  {name:"Clothing",    type:"Clothing",    node:"east",  value:40,  baseOpportunity:20, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0},
+  {name:"Jewellery",   type:"Jewellery",   node:"south", value:100, baseOpportunity:35, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0},
+  {name:"Food Court",  type:"FoodCourt",   node:"food",  value:20,  baseOpportunity:10, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0}
 ];
+
 // ======================
 // SHOP LOOKUP MAP (nodeId → shop)
 // ======================
@@ -543,23 +544,112 @@ function buildCCTVUI(){
       : "<div class='small'>Max Level</div>"}
   `;
 }
+/* ======================
+   STORE UPGRADE LIBRARY
+====================== */
+
+const storeUpgradeData = {
+
+  Electronics: {
+
+    protection: [
+      { name:"Open Display Tables", oppDelta:0,  salaryDelta:0 },
+      { name:"Security Tags",       oppDelta:-5, salaryDelta:0 },
+      { name:"Locked Cabinets",     oppDelta:-12, salaryDelta:0.4 },
+      { name:"Staff-Assisted Sales",oppDelta:-18, salaryDelta:0.8 },
+      { name:"Smart Anti-Theft",    oppDelta:-25, salaryDelta:1.2 }
+    ],
+
+    management: [
+      { name:"Minimal Supervision", motDelta:0,  salaryDelta:0 },
+      { name:"Clear Signage",       motDelta:-2, salaryDelta:0 },
+      { name:"Staff Training",      motDelta:-5, salaryDelta:0.4 },
+      { name:"Active Monitoring",   motDelta:-8, salaryDelta:0.6 },
+      { name:"Dedicated Floor Staff", motDelta:-12, salaryDelta:1.0 }
+    ]
+  },
+
+  Jewellery: {
+
+    protection: [
+      { name:"Open Counter",        oppDelta:0,  salaryDelta:0 },
+      { name:"Glass Display Case",  oppDelta:-8, salaryDelta:0 },
+      { name:"Locked Case",         oppDelta:-15, salaryDelta:0.5 },
+      { name:"Staff-Controlled Viewing", oppDelta:-22, salaryDelta:0.8 },
+      { name:"Secure Vault Storage", oppDelta:-30, salaryDelta:1.2 }
+    ],
+
+    management: [
+      { name:"Basic Service",       motDelta:0, salaryDelta:0 },
+      { name:"Improved Lighting",   motDelta:-3, salaryDelta:0 },
+      { name:"Professional Staff",  motDelta:-6, salaryDelta:0.5 },
+      { name:"Security Awareness Training", motDelta:-9, salaryDelta:0.8 },
+      { name:"Luxury Concierge Model", motDelta:-12, salaryDelta:1.2 }
+    ]
+  },
+
+  Clothing: {
+
+    protection: [
+      { name:"Open Racks",          oppDelta:0, salaryDelta:0 },
+      { name:"Security Tags",       oppDelta:-5, salaryDelta:0 },
+      { name:"Fitting Room Control",oppDelta:-10, salaryDelta:0.3 },
+      { name:"Item Check System",   oppDelta:-16, salaryDelta:0.6 },
+      { name:"Controlled Entry System", oppDelta:-22, salaryDelta:1.0 }
+    ],
+
+    management: [
+      { name:"Minimal Staffing", motDelta:0, salaryDelta:0 },
+      { name:"Floor Assistants", motDelta:-2, salaryDelta:0.3 },
+      { name:"Customer Engagement Model", motDelta:-5, salaryDelta:0.6 },
+      { name:"Loss Prevention Team", motDelta:-9, salaryDelta:1.0 },
+      { name:"Premium Service Model", motDelta:-12, salaryDelta:1.4 }
+    ]
+  },
+
+  FoodCourt: {
+
+    protection: [
+      { name:"Open Counter Service", oppDelta:0, salaryDelta:0 },
+      { name:"Queue Management",     oppDelta:-3, salaryDelta:0 },
+      { name:"Staff Supervision",    oppDelta:-6, salaryDelta:0.3 },
+      { name:"Controlled Payment Area", oppDelta:-10, salaryDelta:0.6 },
+      { name:"Cashless System",      oppDelta:-14, salaryDelta:0.8 }
+    ],
+
+    management: [
+      { name:"Basic Operation", motDelta:0, salaryDelta:0 },
+      { name:"Shift Supervisor", motDelta:-2, salaryDelta:0.3 },
+      { name:"Clean & Safe Initiative", motDelta:-4, salaryDelta:0.5 },
+      { name:"Customer Flow Redesign", motDelta:-7, salaryDelta:0.8 },
+      { name:"High Efficiency Model", motDelta:-10, salaryDelta:1.2 }
+    ]
+  }
+
+};
 
 /* ======================
    UPGRADES
 ====================== */
 function upgradeProtection(i){
   if(gamePhase !== "planning") return;
-  const shop = shops[i];
-  if(shop.protection >= maxLevel) return;
 
-  const cost = upgradeCost(100, shop.protection);
+  const shop = shops[i];
+  const track = storeUpgradeData[shop.type].protection;
+
+  if(shop.protectionTier >= track.length - 1) return;
+
+  const nextTier = shop.protectionTier + 1;
+  const cost = 100 * nextTier;
+
   if(money < cost) return;
 
   money -= cost;
-  shop.protection++;
 
-  if(shop.protection === 3) shop.salary += 0.5;
-  if(shop.protection === 4) shop.salary += 0.8;
+  const measure = track[nextTier];
+
+  shop.protectionTier = nextTier;
+  shop.salary += measure.salaryDelta;
 
   buildSelectedShopUI();
 }
@@ -1003,8 +1093,15 @@ function checkShops(v){
      v.stopsVisited++;
 
       // Adjust opportunity & motivation
-      v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
-      v.M -= shop.management * 2;
+     const protectionMeasure = storeUpgradeData[shop.type]
+  .protection[shop.protectionTier];
+
+v.O = shop.baseOpportunity + protectionMeasure.oppDelta;
+v.O *= v.effortSensitivity;
+     const managementMeasure = storeUpgradeData[shop.type]
+  .management[shop.managementTier];
+
+v.M += managementMeasure.motDelta;
 
       const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
@@ -1230,6 +1327,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
