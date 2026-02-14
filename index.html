@@ -3,20 +3,36 @@
 <head>
 <meta charset="utf-8">
 <title>Mall Manager – Phase 3</title>
-<style>
+  <style>
 body {
   margin:0;
   background:#111;
   color:#eee;
   font-family:Arial;
   display:flex;
+  height:100vh;
+  overflow:hidden;
 }
 
-#game { flex:1; display:block; }
-
+/* LEFT PANEL */
 #ui {
   width:320px;
   background:#1b1b1b;
+  border-right:1px solid #333;
+  padding:12px;
+  overflow-y:auto;
+}
+
+/* CENTER CANVAS */
+#game {
+  flex:1;
+  display:block;
+}
+
+/* RIGHT PANEL */
+#analyticsBox {
+  width:260px;
+  background:#1a1a1a;
   border-left:1px solid #333;
   padding:12px;
   overflow-y:auto;
@@ -29,43 +45,59 @@ button {
 }
 
 .stat { margin:4px 0; }
+
 .shopBlock {
   margin-top:12px;
   border-top:1px solid #333;
   padding-top:8px;
 }
+
 .small { font-size:12px; color:#aaa; }
 </style>
 </head>
 <body>
 
+<!-- LEFT PANEL -->
 <div id="ui">
+
   <div class="stat">💰 Money: <span id="money"></span></div>
   <div class="stat">⭐ Reputation: <span id="rep"></span></div>
   <div class="stat">👥 Visitors: <span id="visitors"></span></div>
   <div class="stat">💼 Wave Salary: <span id="salaryDisplay"></span></div>
 
   <hr>
+
   <div>Wave: <span id="waveNum">1</span></div>
   <div>Phase: <span id="phaseDisplay">Planning</span></div>
   <button onclick="startWave()">Start Wave</button>
 
   <hr>
+
   <b>Global Surveillance</b>
   <div id="cctvPanel"></div>
   <button onclick="addGuard()">Place Guard (£150)</button>
 
   <div id="shopControls"></div>
+
 </div>
 
+<!-- CENTER CANVAS -->
 <canvas id="game"></canvas>
+
+<!-- RIGHT PANEL -->
+<div id="analyticsBox">
+  <h3>Wave Overview</h3>
+  <div id="analyticsPanel" class="small">
+    Start a wave to see results.
+  </div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas(){
-  canvas.width = window.innerWidth - 320;
+  canvas.width = window.innerWidth - 320 - 260;
   canvas.height = window.innerHeight;
 }
 resizeCanvas();
@@ -93,7 +125,14 @@ const path = [
   {x:200,y:700},
   {x:200,y:200}   // Exit (back to entrance)
 ];
-
+// 🔹 Wave analytics (persistent reference)
+let waveStats = {
+  mallRevenue: 0,
+  theftLoss: 0,
+  thefts: 0,
+  offenders: new Set()
+};
+  
 /* ======================
    UPGRADE DATA
 ====================== */
@@ -301,10 +340,17 @@ function upgradeCCTV(){
 ====================== */
 function startWave(){
   if(gamePhase !== "planning") return;
+
+  waveStats = {
+  mallRevenue: 0,
+  theftLoss: 0,
+  thefts: 0,
+  offenders: new Set()
+};
+
   gamePhase = "wave";
   waveTimer = waveLength;
 }
-
 function endWave(){
   gamePhase = "planning";
   waveNumber++;
@@ -467,40 +513,64 @@ function moveVisitor(v, dt){
   v.S = Math.max(0, v.S);
 }
 function checkShops(v){
+
   shops.forEach((shop, index)=>{
+
+    // Skip if already visited this shop
     if(v.visitedShops[index]) return;
 
-    if(Math.hypot(v.x-shop.x, v.y-shop.y) < 60){
+    // If visitor is within shop interaction radius
+    if(Math.hypot(v.x - shop.x, v.y - shop.y) < 60){
+
       v.visitedShops[index] = true;
 
+      // Calculate Opportunity & Motivation adjustments
       v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
       v.M -= shop.management * 2;
 
       const theftScore = v.M + v.O - (v.R * v.riskSensitivity);
 
+      /* ======================
+         THEFT OCCURS
+      ====================== */
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
+
         const theftLoss = shop.value * 0.75;
+
         money -= theftLoss;
         reputation -= 2;
-        v.theftsCommitted++; // IMPORTANT: count thefts
 
-        // Emboldening placeholder (refine later)
-        if(v.type === "determined"){
-          v.M += 5;
-        }
+        // 🔴 Track analytics
+        waveStats.theftLoss += theftLoss;
+        waveStats.thefts++;
+        waveStats.offenders.add(v);
+
+        v.theftsCommitted++;
+
       }
+
+      /* ======================
+         LEGITIMATE PURCHASE
+      ====================== */
       else if(v.S > v.M){
 
-  // Mall only earns percentage of shop sales
-  const mallShare = shop.value * 0.30;
-  money += mallShare;
+      const mallShare = shop.value * 0.30;
 
-  reputation += 1;
+      money += mallShare;
+      reputation += 1;
+
+      // 🟢 Track analytics (ONLY what mall earns)
+      waveStats.mallRevenue += mallShare;
+
 }
+
 
     }
+
   });
+
 }
+
 
 /* ======================
    DRAW
@@ -553,6 +623,24 @@ ctx.stroke();
   const totalSalary = (gamePhase === "wave") ? getTotalSalaryPerSec() : 0;
   document.getElementById("salaryDisplay").innerText =
     totalSalary.toFixed(1) + "/sec";
+if(gamePhase === "wave"){
+
+  document.getElementById("analyticsPanel").innerHTML = `
+    <b>Revenue</b><br>
+   Mall Revenue: £${waveStats.mallRevenue.toFixed(0)}<br><br>
+
+    <b>Crime</b><br>
+    Theft Loss: £${waveStats.theftLoss.toFixed(0)}<br>
+    Thefts: ${waveStats.thefts}<br>
+    Offenders: ${waveStats.offenders.size}
+  `;
+
+} else {
+
+  document.getElementById("analyticsPanel").innerHTML =
+    "Start a wave to see results.";
+}
+
 }
 
 let last=0;
@@ -570,3 +658,4 @@ loop(0);
 </script>
 </body>
 </html>
+
