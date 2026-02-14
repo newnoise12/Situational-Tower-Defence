@@ -588,6 +588,7 @@ function endWave(){
   if(money < 150) return;
 
   placingGuard = true;
+  canvas.style.cursor = "crosshair";
 }
 canvas.addEventListener("click", function(e){
 
@@ -605,6 +606,7 @@ canvas.addEventListener("click", function(e){
 
     money -= 150;
     placingGuard = false;
+canvas.style.cursor = "default";
     return; // stop here
   }
 
@@ -1004,6 +1006,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
