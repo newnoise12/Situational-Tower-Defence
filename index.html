@@ -849,86 +849,91 @@ function decideNextNode(v){
     return;
   }
 
-  // === HUB DECISION LOGIC ===
-  if(current.type === "decision"){
-    v.visitedHub = true;
+ // === HUB DECISION LOGIC ===
+if(current.type === "decision"){
+  v.visitedHub = true;
 
-    let pShop = 0.5;
+  let pShop = 0.5;
 
-    // Time pressure
-    const pressure = Math.min(v.timeInMall / 20, 0.4);
-    pShop -= pressure;
+  // Time pressure
+  const pressure = Math.min(v.timeInMall / 20, 0.4);
+  pShop -= pressure;
 
-    // Offenders circulate more
-    if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
+  // Offenders circulate more
+  if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
 
-    // Personality
-    if(v.type === "determined") pShop += 0.1;
-    if(v.type === "ordinary")   pShop -= 0.1;
+  // Personality
+  if(v.type === "determined") pShop += 0.1;
+  if(v.type === "ordinary")   pShop -= 0.1;
 
-    pShop = Math.max(0.1, Math.min(0.85, pShop));
+  pShop = Math.max(0.1, Math.min(0.85, pShop));
 
-    if(Math.random() < pShop){
-      const shopNodes = current.connections.filter(
-        id => nodes[id].type === "shop"
-      );
+  if(Math.random() < pShop){
 
-      const unvisited = shopNodes.filter((nodeId)=>{
-        const idx = shops.findIndex(s => s.node === nodeId);
-        return idx === -1 ? true : !v.visitedShops[idx];
-      });
+    const shopNodes = current.connections.filter(
+      id => nodes[id].type === "shop"
+    );
 
-      const pickFrom = unvisited.length ? unvisited : shopNodes;
-      const shopNodes = current.connections.filter(
-  id => nodes[id].type === "shop"
-);
+    const unvisited = shopNodes.filter((nodeId)=>{
+      const idx = shops.findIndex(s => s.node === nodeId);
+      return idx === -1 ? true : !v.visitedShops[idx];
+    });
 
-const unvisited = shopNodes.filter((nodeId)=>{
-  const idx = shops.findIndex(s => s.node === nodeId);
-  return idx === -1 ? true : !v.visitedShops[idx];
-});
+    const pickFrom = unvisited.length ? unvisited : shopNodes;
 
-const pickFrom = unvisited.length ? unvisited : shopNodes;
+    // === WEIGHTED PICK ===
+    const weighted = pickFrom.map(nodeId => {
+      const shop = shops.find(s => s.node === nodeId);
 
-// NEW WEIGHTED PICK
-const weighted = pickFrom.map(nodeId => {
-  const shop = shops.find(s => s.node === nodeId);
+      let weight = 1;
 
-  let weight = 1;
+      weight += shop.value / 50;
 
-  // High value stores attract more browsing
-  weight += shop.value / 50;
+      if(v.type === "determined"){
+        weight += shop.value / 40;
+      }
 
-  // Determined offenders prefer high value
-  if(v.type === "determined"){
-    weight += shop.value / 40;
-  }
+      if(shop.theftCount > 0){
+        weight -= 0.3;
+      }
 
-  // Reduce weight if already had theft there
-  if(shop.theftCount > 0){
-    weight -= 0.3;
-  }
+      return { nodeId, weight };
+    });
 
-  return { nodeId, weight };
-});
+    let totalWeight = weighted.reduce((sum, s) => sum + s.weight, 0);
+    let r = Math.random() * totalWeight;
 
-// Weighted random selection
-let totalWeight = weighted.reduce((sum, s) => sum + s.weight, 0);
-let r = Math.random() * totalWeight;
+    let chosen = weighted[0].nodeId;
 
-let chosen = weighted[0].nodeId;
-
-for(let item of weighted){
-  r -= item.weight;
-  if(r <= 0){
-    chosen = item.nodeId;
-    break;
-  }
-}
-
-v.targetNode = chosen;
-return;
+    for(let item of weighted){
+      r -= item.weight;
+      if(r <= 0){
+        chosen = item.nodeId;
+        break;
+      }
     }
+
+    v.targetNode = chosen;
+    return;
+  }
+
+  // Otherwise go to nearest entrance
+  const distMain = Math.hypot(
+    v.x - nodes.entranceMain.x,
+    v.y - nodes.entranceMain.y
+  );
+
+  const distSide = Math.hypot(
+    v.x - nodes.entranceSide.x,
+    v.y - nodes.entranceSide.y
+  );
+
+  v.targetNode = distMain < distSide
+    ? "entranceMain"
+    : "entranceSide";
+
+  return;
+}
 
     // === EXIT DECISION ===
 
@@ -1221,6 +1226,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
