@@ -413,13 +413,14 @@ const nodes = {
     x:600,
     y:450,
     type:"decision",
-    connections:["entranceMain","entranceSide","north","east","south","west"]
+    connections:["entranceMain","entranceSide","north","east","south","west","food"]
   },
 
   north: { id:"north", x:600, y:150, type:"shop", connections:["hub"] },
   east:  { id:"east",  x:1000,y:450, type:"shop", connections:["hub"] },
   south: { id:"south", x:600, y:750, type:"shop", connections:["hub"] },
-  west:  { id:"west",  x:200, y:750, type:"shop", connections:["hub"] }
+  west:  { id:"west",  x:200, y:750, type:"shop", connections:["hub"] },
+  food:  { id:"food",  x:600, y:600, type:"shop", connections:["hub"] }
 };
 
 /* ======================
@@ -429,7 +430,7 @@ const shops = [
   {name:"Electronics", node:"north", value:70,  baseOpportunity:25, protection:0, management:0, salary:0, rep:50, theftCount:0},
   {name:"Clothing",    node:"east",  value:40,  baseOpportunity:20, protection:0, management:0, salary:0, rep:50, theftCount:0},
   {name:"Jewellery",   node:"south", value:100, baseOpportunity:35, protection:0, management:0, salary:0, rep:50, theftCount:0},
-  {name:"Food Court",  node:"hub",   value:20,  baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
+  {name:"Food Court",  node:"food", value:20, baseOpportunity:10, protection:0, management:0, salary:0, rep:50, theftCount:0}
 ];
 
 const guards = [];
@@ -935,7 +936,11 @@ if(current.type === "decision"){
 
   return;
 }
-
+// If at a shop → return to hub
+if(current.type === "shop"){
+  v.targetNode = "hub";
+  return;
+}
   // DEFAULT
   v.targetNode = "hub";
 }
@@ -969,7 +974,8 @@ function checkShops(v){
     const interactionRadius = 60;
 
     if(Math.hypot(v.x - node.x, v.y - node.y) < interactionRadius){
-
+    
+     v.visitedShops[index] = true; 
      v.stopsVisited++;
 
       // Adjust opportunity & motivation
@@ -1200,6 +1206,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
