@@ -855,8 +855,18 @@ function decideNextNode(v){
   }
 
   // FLEE CHECK
-  if(v.timeInMall > 18 && v.theftsCommitted > 0){
-    v.isFleeing = true;
+if(v.timeInMall > 18 && v.theftsCommitted > 0){
+
+  v.isFleeing = true;
+
+  // If at shop → go back to hub first
+  if(current.type === "shop"){
+    v.targetNode = "hub";
+    return;
+  }
+
+  // If at hub → choose nearest exit
+  if(current.type === "decision"){
 
     const distMain = Math.hypot(
       v.x - nodes.entranceMain.x,
@@ -874,6 +884,12 @@ function decideNextNode(v){
 
     return;
   }
+
+  // If at transit node → keep heading to hub
+  v.targetNode = "hub";
+  return;
+}
+
 
   // HUB LOGIC
 if(current.type === "decision"){
@@ -1214,6 +1230,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
