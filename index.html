@@ -668,8 +668,6 @@ canvas.addEventListener("mousemove", function(e){
 });
 
 
-
-
 /* ======================
    VISITOR LOGIC
 ====================== */
@@ -795,71 +793,53 @@ function moveVisitor(v, dt){
 
   const current = nodes[v.currentNode];
 
-  // If at entrance and already returned, exit
+  // If at an entrance and already returned once, exit
   if(
-  (v.currentNode === "entranceMain" || 
-   v.currentNode === "entranceSide") 
-  && v.visitedHub
-){
-  v.finished = true;
-  return;
-}
-  // HUB logic (decision node)
-  if(current.type === "decision"){
-
-  v.visitedHub = true;
-
-  // --- NEW: circulation probability ---
-  // Base desire to keep moving through the mall
-  let pShop = 0.45;
-
-  // If offender still "active" (can steal more), they tend to circulate more
-  if(v.theftsCommitted < v.maxThefts) pShop += 0.20;
-
-  // Determined offenders circulate more, ordinary less
-  if(v.type === "determined") pShop += 0.15;
-  if(v.type === "ordinary")   pShop -= 0.10;
-
-  // Clamp into safe range
-  pShop = Math.max(0.05, Math.min(0.85, pShop));
-
-  // Decide whether to visit another shop
-  if(Math.random() < pShop){
-
-    const shopNodes = current.connections.filter(id => nodes[id].type === "shop");
-
-    // OPTIONAL: avoid picking the same shop repeatedly by using visitedShops
-    const unvisited = shopNodes.filter((nodeId)=>{
-      const idx = shops.findIndex(s => s.node === nodeId);
-      return idx === -1 ? true : !v.visitedShops[idx];
-    });
-
-    const pickFrom = unvisited.length ? unvisited : shopNodes;
-    const randomShop = pickFrom[Math.floor(Math.random() * pickFrom.length)];
-
-    v.targetNode = randomShop;
+    (v.currentNode === "entranceMain" || v.currentNode === "entranceSide") &&
+    v.visitedHub
+  ){
+    v.finished = true;
     return;
   }
 
-  // Otherwise go back to nearest entrance
-if(v.currentNode === "hub"){
+  // HUB logic (decision node)
+  if(current.type === "decision"){
 
-  const distMain = Math.hypot(
-    v.x - nodes.entranceMain.x,
-    v.y - nodes.entranceMain.y
-  );
+    v.visitedHub = true;
 
-  const distSide = Math.hypot(
-    v.x - nodes.entranceSide.x,
-    v.y - nodes.entranceSide.y
-  );
+    // --- circulation probability ---
+    let pShop = 0.45;
 
-  v.targetNode = distMain < distSide 
-    ? "entranceMain" 
-    : "entranceSide";
+    if(v.theftsCommitted < v.maxThefts) pShop += 0.20;
+    if(v.type === "determined") pShop += 0.15;
+    if(v.type === "ordinary")   pShop -= 0.10;
 
-  return;
-}
+    pShop = Math.max(0.05, Math.min(0.85, pShop));
+
+    // visit a shop?
+    if(Math.random() < pShop){
+
+      const shopNodes = current.connections.filter(id => nodes[id].type === "shop");
+
+      const unvisited = shopNodes.filter((nodeId)=>{
+        const idx = shops.findIndex(s => s.node === nodeId);
+        return idx === -1 ? true : !v.visitedShops[idx];
+      });
+
+      const pickFrom = unvisited.length ? unvisited : shopNodes;
+      const randomShop = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+
+      v.targetNode = randomShop;
+      return;
+    }
+
+    // otherwise go to nearest entrance
+    const distMain = Math.hypot(v.x - nodes.entranceMain.x, v.y - nodes.entranceMain.y);
+    const distSide = Math.hypot(v.x - nodes.entranceSide.x, v.y - nodes.entranceSide.y);
+
+    v.targetNode = (distMain < distSide) ? "entranceMain" : "entranceSide";
+    return;
+  } // ✅ <-- this closing brace was missing / in the wrong place
 
   // If at shop, go back to hub
   if(current.type === "shop"){
@@ -1111,6 +1091,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
