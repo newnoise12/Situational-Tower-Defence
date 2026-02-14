@@ -910,15 +910,26 @@ function draw(){
 
 
   // === Draw shops at their node positions ===
-  shops.forEach(shop=>{
-    const node = nodes[shop.node];
+  shops.forEach((shop, i)=>{
+  const node = nodes[shop.node];
 
-    ctx.fillStyle = "#333";
-    ctx.fillRect(node.x-50, node.y-30, 100, 60);
+  const isSelected = (i === selectedShopIndex);
 
-    ctx.fillStyle = "#fff";
-    ctx.fillText(shop.name, node.x-40, node.y);
-  });
+  // 🔵 Shop base
+  ctx.fillStyle = isSelected ? "#555" : "#333";
+  ctx.fillRect(node.x - 50, node.y - 30, 100, 60);
+
+  // 🔵 Selection highlight ring
+  if(isSelected){
+    ctx.strokeStyle = "#4caf50";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(node.x - 55, node.y - 35, 110, 70);
+  }
+
+  // 🔵 Label
+  ctx.fillStyle = "#fff";
+  ctx.fillText(shop.name, node.x - 40, node.y);
+});
 
 
   guards.forEach(g=>{
@@ -1006,6 +1017,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
