@@ -877,22 +877,33 @@ function decideNextNode(v){
 
       const pickFrom = unvisited.length ? unvisited : shopNodes;
 
-      const weighted = pickFrom.map(nodeId=>{
-        const shop = shops.find(s => s.node === nodeId);
+      const weighted = pickFrom.map(nodeId => {
 
-        let weight = 1;
-        weight += shop.value / 50;
+  const shop = shops.find(s => s.node === nodeId);
 
-        if(v.type === "determined"){
-          weight += shop.value / 40;
-        }
+  // SAFETY CHECK
+  if(!shop){
+    return { nodeId, weight: 1 };
+  }
 
-        if(shop.theftCount > 0){
-          weight -= 0.3;
-        }
+  let weight = 1;
 
-        return { nodeId, weight };
-      });
+  weight += shop.value / 50;
+
+  if(v.type === "determined"){
+    weight += shop.value / 40;
+  }
+
+  if(shop.theftCount > 0){
+    weight -= 0.3;
+  }
+
+  // Prevent negative weights
+  weight = Math.max(0.1, weight);
+
+  return { nodeId, weight };
+});
+
 
       let totalWeight = weighted.reduce((sum,s)=>sum+s.weight,0);
       let r = Math.random() * totalWeight;
@@ -1195,6 +1206,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
