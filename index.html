@@ -583,6 +583,12 @@ function endWave(){
 /* ======================
    GUARDS
 ====================== */
+  function addGuard(){
+  if(gamePhase !== "planning") return;
+  if(money < 150) return;
+
+  placingGuard = true;
+}
 canvas.addEventListener("click", function(e){
 
   console.log("Click detected");
@@ -986,6 +992,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
