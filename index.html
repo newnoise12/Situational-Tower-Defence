@@ -724,12 +724,30 @@ function spawnVisitor(){
   ? "entranceMain" 
   : "entranceSide";
 
+  // === VISIT INTENT MODEL ===
+
+// Base intention counts
+let plannedStops = 1;
+
+// Most shoppers browse at least 2 places
+if(type === "ordinary") plannedStops = 2;
+if(type === "opportunist") plannedStops = 2 + Math.floor(Math.random()*2);
+if(type === "determined") plannedStops = 3;
+
+// 30% chance food court is part of visit
+const wantsFood = Math.random() < 0.3;
+
 visitors.push({
   x: nodes[spawnNode].x,
   y: nodes[spawnNode].y,
 
   currentNode: spawnNode,
   targetNode: "hub",
+  
+  spawnEntrance: spawnNode,
+  plannedStops: plannedStops,
+  wantsFood: wantsFood,
+  stopsVisited: 0,
 
   spawnEntrance: spawnNode,
   
@@ -850,114 +868,73 @@ function decideNextNode(v){
   }
 
   // HUB LOGIC
-  if(current.type === "decision"){
-    v.visitedHub = true;
+if(current.type === "decision"){
+  v.visitedHub = true;
 
-    let pShop = 0.5;
+  // If still planning visits
+  if(v.stopsVisited < v.plannedStops){
 
-    const pressure = Math.min(v.timeInMall / 20, 0.4);
-    pShop -= pressure;
+    const shopNodes = current.connections.filter(
+      id => nodes[id].type === "shop"
+    );
 
-    if(v.theftsCommitted < v.maxThefts) pShop += 0.15;
-    if(v.type === "determined") pShop += 0.1;
-    if(v.type === "ordinary")   pShop -= 0.1;
+    // Remove already visited shops
+    const unvisited = shopNodes.filter(nodeId=>{
+      const idx = shops.findIndex(s => s.node === nodeId);
+      return !v.visitedShops[idx];
+    });
 
-    pShop = Math.max(0.1, Math.min(0.85, pShop));
+    const pickFrom = unvisited.length ? unvisited : shopNodes;
 
-    if(Math.random() < pShop){
+    // === VALUE WEIGHTING ===
+    const weighted = pickFrom.map(nodeId=>{
+      const shop = shops.find(s => s.node === nodeId);
 
-      const shopNodes = current.connections.filter(
-        id => nodes[id].type === "shop"
-      );
+      let weight = 1;
 
-      const unvisited = shopNodes.filter(nodeId=>{
-        const idx = shops.findIndex(s => s.node === nodeId);
-        return idx === -1 ? true : !v.visitedShops[idx];
-      });
+      // High value shops attract more browsing
+      weight += shop.value / 40;
 
-      const pickFrom = unvisited.length ? unvisited : shopNodes;
-
-      const weighted = pickFrom.map(nodeId => {
-
-  const shop = shops.find(s => s.node === nodeId);
-
-  // SAFETY CHECK
-  if(!shop){
-    return { nodeId, weight: 1 };
-  }
-
-  let weight = 1;
-
-// 🟢 Reputation attraction (main driver)
-weight += shop.rep / 40;
-
-// 🟡 Value matters slightly
-weight += shop.value / 100;
-
-// 🔴 Determined offenders prefer high value stores
-if(v.type === "determined"){
-  weight += shop.value / 60;
-}
-
-// 🔵 Ordinary visitors prefer reputable shops
-if(v.type === "ordinary"){
-  weight += shop.rep / 60;
-}
-
-// 🟥 Reduce weight if recent crime heat
-if(shop.theftCount > 0){
-  weight -= shop.theftCount * 0.2;
-}
-
-// Prevent negative or zero weights
-weight = Math.max(0.1, weight);
-
-  // Prevent negative weights
-  weight = Math.max(0.1, weight);
-
-  return { nodeId, weight };
-});
-
-
-      let totalWeight = weighted.reduce((sum,s)=>sum+s.weight,0);
-      let r = Math.random() * totalWeight;
-
-      let chosen = weighted[0].nodeId;
-
-      for(let item of weighted){
-        r -= item.weight;
-        if(r <= 0){
-          chosen = item.nodeId;
-          break;
-        }
+      // Determined offenders heavily prefer high value
+      if(v.type === "determined"){
+        weight += shop.value / 25;
       }
 
-      v.targetNode = chosen;
-      return;
+      // If wants food, boost food court
+      if(v.wantsFood && shop.name === "Food Court"){
+        weight += 2;
+      }
+
+      // Reputation affects pull
+      weight += shop.rep / 50;
+
+      return { nodeId, weight };
+    });
+
+    let totalWeight = weighted.reduce((sum,s)=>sum+s.weight,0);
+    let r = Math.random() * totalWeight;
+
+    let chosen = weighted[0].nodeId;
+
+    for(let item of weighted){
+      r -= item.weight;
+      if(r <= 0){
+        chosen = item.nodeId;
+        break;
+      }
     }
 
-    const distMain = Math.hypot(
-      v.x - nodes.entranceMain.x,
-      v.y - nodes.entranceMain.y
-    );
-
-    const distSide = Math.hypot(
-      v.x - nodes.entranceSide.x,
-      v.y - nodes.entranceSide.y
-    );
-
-    v.targetNode = distMain < distSide
-      ? "entranceMain"
-      : "entranceSide";
-
+    v.targetNode = chosen;
     return;
   }
 
-  // SHOP → HUB
-  if(current.type === "shop"){
-    v.targetNode = "hub";
-    return;
-  }
+  // If finished planned stops → exit
+  v.targetNode = Math.random() < 0.6
+    ? v.spawnEntrance
+    : (v.spawnEntrance === "entranceMain" ? "entranceSide" : "entranceMain");
+
+  return;
+}
 
   // DEFAULT
   v.targetNode = "hub";
@@ -993,7 +970,7 @@ function checkShops(v){
 
     if(Math.hypot(v.x - node.x, v.y - node.y) < interactionRadius){
 
-      v.visitedShops[index] = true;
+     v.stopsVisited++;
 
       // Adjust opportunity & motivation
       v.O = shop.baseOpportunity - shop.protection * 5 * v.effortSensitivity;
@@ -1223,6 +1200,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
