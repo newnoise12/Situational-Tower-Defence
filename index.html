@@ -195,6 +195,7 @@ window.addEventListener("resize", resizeCanvas);
 let money = 600;
 let reputation = 50;
 let placingGuard = false;
+let selectedShopIndex = null;
 
 let gamePhase = "planning";
 let waveTimer = 0;
@@ -223,6 +224,8 @@ let waveStats = {
   // NEW: experiment visibility
   visitorTypes: { ordinary: 0, opportunist: 0, determined: 0 },
   theftsByType:  { ordinary: 0, opportunist: 0, determined: 0 }
+
+
 };
 
 /* ======================
@@ -440,73 +443,46 @@ function getTotalSalaryPerSec(){
 /* ======================
    UI BUILDERS
 ====================== */
-function buildShopUI(){
+function buildSelectedShopUI(){
+
   const container = document.getElementById("shopControls");
   container.innerHTML = "";
 
-  shops.forEach((shop,i)=>{
+  if(selectedShopIndex === null){
+    container.innerHTML = "<div class='small'>Click a shop to manage it.</div>";
+    return;
+  }
 
-    const protectionText = protectionLevels[shop.name][shop.protection];
-    const managementText = managementLevels[shop.management];
+  const shop = shops[selectedShopIndex];
 
-    const protectionCost = shop.protection < maxLevel ?
-      upgradeCost(100, shop.protection) : null;
+  container.innerHTML = `
+    <h4>${shop.name}</h4>
+    <div class="small">
+      Reputation: ${Math.round(shop.rep)}
+    </div>
 
-    const managementCost = shop.management < maxLevel ?
-      upgradeCost(80, shop.management) : null;
+    <hr>
 
-    const div = document.createElement("div");
-    div.className="shopBlock";
+    <div class="small">
+      Protection Level: ${shop.protection}
+    </div>
+    <button onclick="upgradeProtection(${selectedShopIndex})">
+      Upgrade Protection
+    </button>
 
-    div.innerHTML = `
-      <div class="row">
-        <b>${shop.name}</b>
-      </div>
+    <div class="small" style="margin-top:8px;">
+      Management Level: ${shop.management}
+    </div>
+    <button onclick="upgradeManagement(${selectedShopIndex})">
+      Upgrade Management
+    </button>
 
-      <div class="row" style="margin-top:6px;">
-        <div class="small">
-          Product Protection: Level ${shop.protection}<br>
-          ${protectionText}
-        </div>
-        <button class="infoBtn"
-          onmouseenter="showTooltip(event,'protection')"
-          onmousemove="moveTooltip(event)"
-          onmouseleave="hideTooltip()"
-          onclick="showInfoPanel('protection','${shop.name} — Protection')"
-        >ℹ</button>
-      </div>
+    <div class="small" style="margin-top:8px;">
+      Staff Cost: £${shop.salary.toFixed(1)} / sec
+    </div>
+  `;
+}
 
-      ${
-        shop.protection < maxLevel
-        ? `<button onclick="upgradeProtection(${i})">Upgrade Protection (£${protectionCost})</button>`
-        : "<div class='small'>Max Level</div>"
-      }
-
-      <div class="row" style="margin-top:10px;">
-        <div class="small">
-          Store Management: Level ${shop.management}<br>
-          ${managementText}
-        </div>
-        <button class="infoBtn"
-          onmouseenter="showTooltip(event,'management')"
-          onmousemove="moveTooltip(event)"
-          onmouseleave="hideTooltip()"
-          onclick="showInfoPanel('management','${shop.name} — Management')"
-        >ℹ</button>
-      </div>
-
-      ${
-        shop.management < maxLevel
-        ? `<button onclick="upgradeManagement(${i})">Upgrade Management (£${managementCost})</button>`
-        : "<div class='small'>Max Level</div>"
-      }
-
-      <div class="small" style="margin-top:6px;">
-        Staff Cost During Wave: £${(shop.salary || 0).toFixed(1)} / sec
-      </div>
-    `;
-
-    container.appendChild(div);
   });
 }
 
@@ -544,7 +520,7 @@ function upgradeProtection(i){
   if(shop.protection === 3) shop.salary += 0.5;
   if(shop.protection === 4) shop.salary += 0.8;
 
-  buildShopUI();
+  buildSelectedShopUI();
 }
 
 function upgradeManagement(i){
@@ -561,7 +537,7 @@ function upgradeManagement(i){
   if(shop.management === 3) shop.salary += 0.4;
   if(shop.management === 4) shop.salary += 0.6;
 
-  buildShopUI();
+  buildSelectedShopUI();
 }
 
 function upgradeCCTV(){
@@ -611,24 +587,36 @@ function endWave(){
    GUARDS
 ====================== */
 canvas.addEventListener("click", function(e){
-  if(!placingGuard || gamePhase !== "planning") return;
 
   const rect = canvas.getBoundingClientRect();
-  guards.push({
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
-    radius:130
-  });
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-  money -= 150;
-  placingGuard = false;
+  // 1️⃣ SHOP SELECTION FIRST
+  for(let i = 0; i < shops.length; i++){
+    const shop = shops[i];
+    const node = nodes[shop.node];
+
+    if(Math.hypot(x - node.x, y - node.y) < 60){
+      selectedShopIndex = i;
+      buildSelectedShopUI();
+      return; // stop here — don't place guard
+    }
+  }
+
+  // 2️⃣ GUARD PLACEMENT SECOND
+  if(placingGuard && gamePhase === "planning"){
+    guards.push({
+      x: x,
+      y: y,
+      radius:130
+    });
+
+    money -= 150;
+    placingGuard = false;
+  }
+
 });
-
-function addGuard(){
-  if(gamePhase !== "planning") return;
-  if(money < 150) return;
-  placingGuard = true;
-}
 
 /* ======================
    VISITOR LOGIC
@@ -1000,12 +988,13 @@ function loop(t){
 }
 
 // Build UI and start
-buildShopUI();
+buildSelectedShopUI();
 buildCCTVUI();
 setRightMode("wave");
 loop(0);
 </script>
 </body>
 </html>
+
 
 
