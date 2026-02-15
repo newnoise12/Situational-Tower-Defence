@@ -504,19 +504,25 @@ function buildSelectedShopUI(){
       <div class="small">
         Protection: ${currentProtection.name}
       </div>
+      <button class="infoBtn"
+        onmouseenter="showTooltip(event,'protection')"
+        onmousemove="moveTooltip(event)"
+        onmouseleave="hideTooltip()"
+        onclick="showInfoPanel('protection','${shop.name}')"
+      >ℹ</button>
     </div>
 
     ${
       nextProtection
-      ? `
-        <div class="small">
-          Next: ${nextProtection.name}
-        </div>
-        <button onclick="upgradeProtection(${selectedShopIndex})">
-          Upgrade (£${nextProtection.cost})
-        </button>
-      `
-      : `<div class="small">Max Protection Level</div>`
+        ? `
+          <div class="small">
+            Next: ${nextProtection.name}
+          </div>
+          <button onclick="upgradeProtection(${selectedShopIndex})">
+            Upgrade (£${nextProtection.cost})
+          </button>
+        `
+        : `<div class="small">Max Protection Level</div>`
     }
 
     <hr>
@@ -526,19 +532,25 @@ function buildSelectedShopUI(){
       <div class="small">
         Management: ${currentManagement.name}
       </div>
+      <button class="infoBtn"
+        onmouseenter="showTooltip(event,'management')"
+        onmousemove="moveTooltip(event)"
+        onmouseleave="hideTooltip()"
+        onclick="showInfoPanel('management','${shop.name}')"
+      >ℹ</button>
     </div>
 
     ${
       nextManagement
-      ? `
-        <div class="small">
-          Next: ${nextManagement.name}
-        </div>
-        <button onclick="upgradeManagement(${selectedShopIndex})">
-          Upgrade (£${nextManagement.cost})
-        </button>
-      `
-      : `<div class="small">Max Management Level</div>`
+        ? `
+          <div class="small">
+            Next: ${nextManagement.name}
+          </div>
+          <button onclick="upgradeManagement(${selectedShopIndex})">
+            Upgrade (£${nextManagement.cost})
+          </button>
+        `
+        : `<div class="small">Max Management Level</div>`
     }
 
     <hr>
@@ -548,6 +560,7 @@ function buildSelectedShopUI(){
     </div>
   `;
 }
+
 
 function buildCCTVUI(){
   const panel = document.getElementById("cctvPanel");
@@ -1355,6 +1368,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
