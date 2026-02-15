@@ -581,7 +581,7 @@ function buildSelectedShopUI(){
     <button onclick="chooseProfitModel(${selectedShopIndex})">
       Profit-Focused Model
     </button>
-    <button onclick="chooseSecurityModel(${selectedShopIndex})">
+    <button onclick="chooseSecurityBranch(${selectedShopIndex})">
       Security-Focused Model
     </button>
     <hr>
@@ -720,30 +720,31 @@ function createStoreUpgradeSet(
   
 const storeUpgradeData = {
 
-  Electronics: createStoreUpgradeSet(
-    5, 8, 12,
-    -5, -12, -20,
-    -3, -7, -12
-  ),
+  Electronics: {
+    profit: [...],
+    security: {
+      target: [...],
+      guardian: [...]
+    }
+  },
 
-  Clothing: createStoreUpgradeSet(
-    3, 6, 10,
-    -4, -9, -16,
-    -2, -5, -9
-  ),
+  Jewellery: {
+    protection: [...],
+    management: [...]
+  },
 
-  Jewellery: createStoreUpgradeSet(
-    8, 14, 22,
-    -8, -15, -25,
-    -4, -8, -14
-  ),
+  Clothing: {
+    protection: [...],
+    management: [...]
+  },
 
-  FoodCourt: createStoreUpgradeSet(
-    2, 4, 7,
-    -3, -6, -10,
-    -2, -4, -7
-  )
+  FoodCourt: {
+    protection: [...],
+    management: [...]
+  }
+
 };
+
 
 
   Jewellery: {
@@ -1324,7 +1325,6 @@ function checkShops(v){
 
   shops.forEach((shop, index)=>{
 
-    // Already interacted this visit?
     if(v.visitedShops[index]) return;
 
     const node = nodes[shop.node];
@@ -1335,21 +1335,28 @@ function checkShops(v){
       v.visitedShops[index] = true;
       v.stopsVisited++;
 
-      /* ======================
-         BASE VALUES
-      ====================== */
-
       let effectiveOpportunity = shop.baseOpportunity;
       let effectiveMotivation = v.M;
 
       /* ======================
-         APPLY STORE STRATEGY
+         PROFIT MODEL
+      ====================== */
+
+      if(shop.strategy === "profit"){
+        const track = storeUpgradeData[shop.type].profit;
+        const measure = track[shop.profitTier];
+
+        effectiveOpportunity += measure.oppDelta;
+      }
+
+      /* ======================
+         SECURITY MODEL
       ====================== */
 
       if(shop.strategy === "security" && shop.securityBranch){
 
-        const track = storeUpgradeData[shop.type]
-          .security[shop.securityBranch];
+        const track =
+          storeUpgradeData[shop.type].security[shop.securityBranch];
 
         const measure = track[shop.securityTier];
 
@@ -1361,18 +1368,6 @@ function checkShops(v){
           effectiveMotivation += measure.motDelta;
         }
       }
-
-      if(shop.strategy === "profit"){
-
-        const track = storeUpgradeData[shop.type].profit;
-        const measure = track[shop.profitTier];
-
-        effectiveOpportunity += measure.oppDelta;
-      }
-
-      /* ======================
-         FINAL SCP CALC
-      ====================== */
 
       const O = effectiveOpportunity * v.effortSensitivity;
       const M = effectiveMotivation;
@@ -1421,6 +1416,7 @@ function checkShops(v){
     }
   });
 }
+
 
 
 /* ======================
@@ -1602,6 +1598,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
