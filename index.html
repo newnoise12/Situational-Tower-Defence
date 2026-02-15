@@ -517,6 +517,35 @@ function buildSelectedShopUI(){
     </div>
 
     <hr>
+    ${
+  !shop.strategy
+  ? `
+    <div class="small"><b>Choose Store Strategy:</b></div>
+    <button onclick="chooseProfitModel(${selectedShopIndex})">
+      Profit-Focused Model
+    </button>
+    <button onclick="chooseSecurityModel(${selectedShopIndex})">
+      Security-Focused Model
+    </button>
+    <hr>
+  `
+  : ""
+}
+${
+  shop.strategy === "security" && !shop.securityBranch
+  ? `
+    <div class="small"><b>Choose Security Approach:</b></div>
+    <button onclick="chooseSecurityBranch(${selectedShopIndex}, 'targetHardening')">
+      Target Hardening
+    </button>
+    <button onclick="chooseSecurityBranch(${selectedShopIndex}, 'guardianship')">
+      Guardianship
+    </button>
+    <hr>
+  `
+  : ""
+}
+
 
     <!-- PROTECTION -->
     <div class="row">
@@ -1270,7 +1299,7 @@ v.O = effectiveOpportunity * v.effortSensitivity;
       ====================== */
       else if(v.S > v.M){
 
-        const mallShare = shop.value * 0.30;
+        const mallShare = (shop.value + shop.revenueBonus) * 0.30;
 
         money += mallShare;
         reputation += 1;
@@ -1465,6 +1494,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
