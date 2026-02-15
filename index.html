@@ -428,28 +428,85 @@ const nodes = {
 ====================== */
 const shops = [
   {
-  name:"Electronics",
-  type:"Electronics",
-  node:"north",
-  value:70,
-  baseOpportunity:25,
+    name:"Electronics",
+    type:"Electronics",
+    node:"north",
+    value:70,
+    baseOpportunity:25,
 
-  strategy:null,
-  securityBranch:null,
+    strategy:null,
+    securityBranch:null,
 
-  profitTier:0,
-  securityTier:0,
+    profitTier:0,
+    securityTier:0,
 
-  revenueBonus:0,
-  guardianEffect:0,
+    revenueBonus:0,
+    guardianEffect:0,
 
-  salary:0,
-  rep:50,
-  theftCount:0
-},
-  {name:"Clothing",    type:"Clothing",    node:"east",  value:40,  baseOpportunity:20, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0},
-  {name:"Jewellery",   type:"Jewellery",   node:"south", value:100, baseOpportunity:35, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0},
-  {name:"Food Court",  type:"FoodCourt",   node:"food",  value:20,  baseOpportunity:10, protectionTier:0, managementTier:0, salary:0, rep:50, theftCount:0}
+    salary:0,
+    rep:50,
+    theftCount:0
+  },
+  {
+    name:"Clothing",
+    type:"Clothing",
+    node:"east",
+    value:40,
+    baseOpportunity:20,
+
+    strategy:null,
+    securityBranch:null,
+
+    profitTier:0,
+    securityTier:0,
+
+    revenueBonus:0,
+    guardianEffect:0,
+
+    salary:0,
+    rep:50,
+    theftCount:0
+  },
+  {
+    name:"Jewellery",
+    type:"Jewellery",
+    node:"south",
+    value:100,
+    baseOpportunity:35,
+
+    strategy:null,
+    securityBranch:null,
+
+    profitTier:0,
+    securityTier:0,
+
+    revenueBonus:0,
+    guardianEffect:0,
+
+    salary:0,
+    rep:50,
+    theftCount:0
+  },
+  {
+    name:"Food Court",
+    type:"FoodCourt",
+    node:"food",
+    value:20,
+    baseOpportunity:10,
+
+    strategy:null,
+    securityBranch:null,
+
+    profitTier:0,
+    securityTier:0,
+
+    revenueBonus:0,
+    guardianEffect:0,
+
+    salary:0,
+    rep:50,
+    theftCount:0
+  }
 ];
 
 // ======================
@@ -630,34 +687,64 @@ function buildCCTVUI(){
    STORE UPGRADE LIBRARY
 ====================== */
 
-const storeUpgradeData = {
-
-  Electronics: {
-
-  profit: [
-    { name:"Standard Checkout", revenueDelta:0, oppDelta:0, salaryDelta:0, cost:0 },
-    { name:"Self-Checkout Machines", revenueDelta:5, oppDelta:5, salaryDelta:-0.4, cost:200 },
-    { name:"Extended Warranty Upsell", revenueDelta:10, oppDelta:8, salaryDelta:-0.6, cost:350 },
-    { name:"Automated Retail Model", revenueDelta:18, oppDelta:12, salaryDelta:-1.0, cost:600 }
-  ],
-
-  security: {
-
-    target: [
-      { name:"Open Display Tables", oppDelta:0, salaryDelta:0, cost:0 },
-      { name:"Security Tags", oppDelta:-5, salaryDelta:0, cost:120 },
-      { name:"Locked Cabinets", oppDelta:-12, salaryDelta:0.4, cost:250 },
-      { name:"Smart Anti-Theft System", oppDelta:-20, salaryDelta:0.8, cost:450 }
+function createStoreUpgradeSet(
+  profit1, profit2, profit3,
+  target1, target2, target3,
+  guard1, guard2, guard3
+){
+  return {
+    profit: [
+      { name:"Standard Model", revenueDelta:0, oppDelta:0, salaryDelta:0, cost:0 },
+      { name:"Efficiency Upgrade I", revenueDelta:profit1, oppDelta:4, salaryDelta:-0.3, cost:200 },
+      { name:"Efficiency Upgrade II", revenueDelta:profit2, oppDelta:7, salaryDelta:-0.6, cost:400 },
+      { name:"Automation Model", revenueDelta:profit3, oppDelta:10, salaryDelta:-1.0, cost:700 }
     ],
 
-    guardian: [
-      { name:"Minimal Supervision", motDelta:0, salaryDelta:0, cost:0 },
-      { name:"Floor Staff Presence", motDelta:-3, salaryDelta:0.4, cost:150 },
-      { name:"Active Engagement Model", motDelta:-7, salaryDelta:0.8, cost:300 },
-      { name:"Dedicated Loss Prevention", motDelta:-12, salaryDelta:1.2, cost:550 }
-    ]
-  }
+    security: {
+      target: [
+        { name:"Basic Layout", oppDelta:0, salaryDelta:0, cost:0 },
+        { name:"Target Hardening I", oppDelta:target1, salaryDelta:0.3, cost:200 },
+        { name:"Target Hardening II", oppDelta:target2, salaryDelta:0.6, cost:400 },
+        { name:"High Security Infrastructure", oppDelta:target3, salaryDelta:1.0, cost:700 }
+      ],
+
+      guardian: [
+        { name:"Minimal Staffing", motDelta:0, salaryDelta:0, cost:0 },
+        { name:"Guardianship I", motDelta:guard1, salaryDelta:0.4, cost:200 },
+        { name:"Guardianship II", motDelta:guard2, salaryDelta:0.8, cost:400 },
+        { name:"Dedicated Loss Prevention", motDelta:guard3, salaryDelta:1.2, cost:700 }
+      ]
+    }
+  };
 }
+  
+const storeUpgradeData = {
+
+  Electronics: createStoreUpgradeSet(
+    5, 8, 12,
+    -5, -12, -20,
+    -3, -7, -12
+  ),
+
+  Clothing: createStoreUpgradeSet(
+    3, 6, 10,
+    -4, -9, -16,
+    -2, -5, -9
+  ),
+
+  Jewellery: createStoreUpgradeSet(
+    8, 14, 22,
+    -8, -15, -25,
+    -4, -8, -14
+  ),
+
+  FoodCourt: createStoreUpgradeSet(
+    2, 4, 7,
+    -3, -6, -10,
+    -2, -4, -7
+  )
+};
+
 
   Jewellery: {
 
@@ -731,15 +818,6 @@ const storeUpgradeData = {
 
   buildSelectedShopUI();
 }
-  function chooseProfitModel(i){
-  const shop = shops[i];
-  if(shop.strategy !== null) return;
-
-  shop.strategy = "profit";
-  shop.profitTier = 0;
-
-  buildSelectedShopUI();
-}
   function chooseSecurityBranch(i, branch){
   const shop = shops[i];
 
@@ -798,6 +876,7 @@ function upgradeManagement(i){
   buildSelectedShopUI();
 }
 function upgradeProfit(i){
+
   const shop = shops[i];
   if(shop.strategy !== "profit") return;
 
@@ -810,19 +889,20 @@ function upgradeProfit(i){
   money -= next.cost;
   shop.profitTier++;
 
-  shop.value += next.valueDelta;
+  shop.revenueBonus += next.revenueDelta;
+  shop.baseOpportunity += next.oppDelta;
   shop.salary += next.salaryDelta;
 
   buildSelectedShopUI();
 }
 
-
 function upgradeSecurity(i){
+
   const shop = shops[i];
   if(shop.strategy !== "security") return;
   if(!shop.securityBranch) return;
 
-  const track = storeUpgradeData[shop.type][shop.securityBranch];
+  const track = storeUpgradeData[shop.type].security[shop.securityBranch];
   if(shop.securityTier >= track.length - 1) return;
 
   const next = track[shop.securityTier + 1];
@@ -831,7 +911,6 @@ function upgradeSecurity(i){
   money -= next.cost;
   shop.securityTier++;
 
-  shop.baseOpportunity += next.oppDelta;
   shop.salary += next.salaryDelta;
 
   buildSelectedShopUI();
@@ -1245,75 +1324,104 @@ function checkShops(v){
 
   shops.forEach((shop, index)=>{
 
-    // Skip if already visited
+    // Already interacted this visit?
     if(v.visitedShops[index]) return;
 
-    // Get node position for this shop
     const node = nodes[shop.node];
-
-    // Detect proximity to node
     const interactionRadius = 60;
 
     if(Math.hypot(v.x - node.x, v.y - node.y) < interactionRadius){
-    
-     v.visitedShops[index] = true; 
-     v.stopsVisited++;
 
-      // Adjust opportunity & motivation
-     let effectiveOpportunity = shop.baseOpportunity;
+      v.visitedShops[index] = true;
+      v.stopsVisited++;
 
-// Apply security branch effects (if using security model)
-if(shop.strategy === "security" && shop.securityBranch){
-  const track = storeUpgradeData[shop.type][shop.securityBranch];
-  const measure = track[shop.securityTier];
-  effectiveOpportunity += measure.oppDelta;
-}
+      /* ======================
+         BASE VALUES
+      ====================== */
 
-v.O = effectiveOpportunity * v.effortSensitivity;
+      let effectiveOpportunity = shop.baseOpportunity;
+      let effectiveMotivation = v.M;
 
+      /* ======================
+         APPLY STORE STRATEGY
+      ====================== */
+
+      if(shop.strategy === "security" && shop.securityBranch){
+
+        const track = storeUpgradeData[shop.type]
+          .security[shop.securityBranch];
+
+        const measure = track[shop.securityTier];
+
+        if(shop.securityBranch === "target"){
+          effectiveOpportunity += measure.oppDelta;
+        }
+
+        if(shop.securityBranch === "guardian"){
+          effectiveMotivation += measure.motDelta;
+        }
+      }
+
+      if(shop.strategy === "profit"){
+
+        const track = storeUpgradeData[shop.type].profit;
+        const measure = track[shop.profitTier];
+
+        effectiveOpportunity += measure.oppDelta;
+      }
+
+      /* ======================
+         FINAL SCP CALC
+      ====================== */
+
+      const O = effectiveOpportunity * v.effortSensitivity;
+      const M = effectiveMotivation;
+      const R = v.R;
+
+      const theftScore = M + O - (R * v.riskSensitivity);
 
       /* ======================
          THEFT
       ====================== */
+
       if(v.theftsCommitted < v.maxThefts && theftScore > 30){
 
-  const theftLoss = shop.value * 0.75;
+        const theftLoss = shop.value * 0.75;
 
-  money -= theftLoss;
-  reputation -= 2;
+        money -= theftLoss;
+        reputation -= 2;
 
-  waveStats.theftLoss += theftLoss;
-  waveStats.thefts++;
-  waveStats.theftsByType[v.type]++;
-  waveStats.offenders.add(v);
+        waveStats.theftLoss += theftLoss;
+        waveStats.thefts++;
+        waveStats.theftsByType[v.type]++;
+        waveStats.offenders.add(v);
 
-  shop.theftCount++;   // 🔴 ADD THIS
-  shop.rep -= 2;
-  shop.rep = Math.max(0, shop.rep);
+        shop.theftCount++;
+        shop.rep = Math.max(0, shop.rep - 2);
 
-  v.theftsCommitted++;
-}
+        v.theftsCommitted++;
+      }
 
       /* ======================
-         LEGITIMATE PURCHASE
+         LEGIT PURCHASE
       ====================== */
-      else if(v.S > v.M){
 
-        const mallShare = (shop.value + shop.revenueBonus) * 0.30;
+      else if(v.S > M){
+
+        const mallShare =
+          (shop.value + shop.revenueBonus) * 0.30;
 
         money += mallShare;
         reputation += 1;
 
         waveStats.mallRevenue += mallShare;
-        shop.rep += 0.5;
-        shop.rep = Math.min(100, shop.rep);
+
+        shop.rep = Math.min(100, shop.rep + 0.5);
       }
-
     }
-
   });
-
 }
+
 
 /* ======================
    DRAW
@@ -1494,6 +1602,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
