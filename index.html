@@ -480,11 +480,16 @@ function buildSelectedShopUI(){
   }
 
   const shop = shops[selectedShopIndex];
+
   const protectionTrack = storeUpgradeData[shop.type].protection;
   const managementTrack = storeUpgradeData[shop.type].management;
 
   const currentProtection = protectionTrack[shop.protectionTier];
   const currentManagement = managementTrack[shop.managementTier];
+
+  const nextProtection = protectionTrack[shop.protectionTier + 1];
+  const nextManagement = managementTrack[shop.managementTier + 1];
+
   container.innerHTML = `
     <h4>${shop.name}</h4>
 
@@ -494,39 +499,51 @@ function buildSelectedShopUI(){
 
     <hr>
 
+    <!-- PROTECTION -->
     <div class="row">
       <div class="small">
         Protection: ${currentProtection.name}
       </div>
-      <button class="infoBtn"
-        onmouseenter="showTooltip(event,'protection')"
-        onmousemove="moveTooltip(event)"
-        onmouseleave="hideTooltip()"
-        onclick="showInfoPanel('protection','${shop.name}')"
-      >ℹ</button>
     </div>
 
-    <button onclick="upgradeProtection(${selectedShopIndex})">
-      Upgrade Protection
-    </button>
+    ${
+      nextProtection
+      ? `
+        <div class="small">
+          Next: ${nextProtection.name}
+        </div>
+        <button onclick="upgradeProtection(${selectedShopIndex})">
+          Upgrade (£${nextProtection.cost})
+        </button>
+      `
+      : `<div class="small">Max Protection Level</div>`
+    }
 
-    <div class="row" style="margin-top:8px;">
+    <hr>
+
+    <!-- MANAGEMENT -->
+    <div class="row">
       <div class="small">
         Management: ${currentManagement.name}
       </div>
-      <button class="infoBtn"
-        onmouseenter="showTooltip(event,'management')"
-        onmousemove="moveTooltip(event)"
-        onmouseleave="hideTooltip()"
-        onclick="showInfoPanel('management','${shop.name}')"
-      >ℹ</button>
     </div>
 
-    <button onclick="upgradeManagement(${selectedShopIndex})">
-      Upgrade Management
-    </button>
+    ${
+      nextManagement
+      ? `
+        <div class="small">
+          Next: ${nextManagement.name}
+        </div>
+        <button onclick="upgradeManagement(${selectedShopIndex})">
+          Upgrade (£${nextManagement.cost})
+        </button>
+      `
+      : `<div class="small">Max Management Level</div>`
+    }
 
-    <div class="small" style="margin-top:8px;">
+    <hr>
+
+    <div class="small">
       Staff Cost: £${shop.salary.toFixed(1)} / sec
     </div>
   `;
@@ -1338,6 +1355,7 @@ loop(0);
 </script>
 </body>
 </html>
+
 
 
 
