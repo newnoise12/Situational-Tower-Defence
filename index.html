@@ -2,9 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>MALL MANAGER '89</title>
+<title>Inpugnity! — Desktop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -67,7 +65,7 @@ body::after {
 }
 
 #ui::before {
-  content: 'MALL MANAGER ʼ89';
+  content: 'INPUGNITY!';
   display: block;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
@@ -293,140 +291,6 @@ hr {
   letter-spacing: 0.08em;
 }
 
-/* ── MOBILE BOTTOM NAV ── */
-#mobileNav {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 52px;
-  background: var(--panel-bg);
-  border-top: 1px solid var(--panel-border);
-  z-index: 200;
-  display: flex;
-}
-
-#mobileNav button {
-  flex: 1;
-  margin: 0;
-  border: none;
-  border-right: 1px solid var(--panel-border);
-  border-radius: 0;
-  padding: 0;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-  text-shadow: none;
-  background: transparent;
-}
-#mobileNav button:last-child { border-right: none; }
-#mobileNav button.active {
-  color: var(--neon-cyan);
-  text-shadow: var(--glow-cyan);
-  background: rgba(0,245,255,0.05);
-}
-#mobileNav button:hover {
-  background: rgba(0,245,255,0.05);
-  box-shadow: none;
-}
-
-/* ── MOBILE DRAWER ── */
-#mobileDrawer {
-  display: none;
-  position: fixed;
-  bottom: 52px; left: 0; right: 0;
-  height: 45vh;
-  background: var(--panel-bg);
-  border-top: 2px solid var(--neon-purple);
-  box-shadow: 0 -4px 30px rgba(191,0,255,0.25);
-  z-index: 199;
-  overflow-y: auto;
-  padding: 12px;
-  transition: transform 0.25s ease;
-}
-#mobileDrawer.hidden {
-  transform: translateY(100%);
-}
-
-/* ── MOBILE STATS BAR ── */
-#mobileStats {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 44px;
-  background: var(--panel-bg);
-  border-bottom: 1px solid var(--panel-border);
-  z-index: 200;
-  align-items: center;
-  padding: 0 10px;
-  gap: 10px;
-  font-size: 14px;
-  overflow: hidden;
-}
-#mobileStats .mStat {
-  white-space: nowrap;
-  color: var(--text-main);
-}
-#mobileStats .mStat span {
-  color: var(--neon-yellow);
-  text-shadow: 0 0 6px rgba(255,230,0,0.5);
-}
-#mobileStats #mStartWave {
-  margin: 0;
-  padding: 4px 10px;
-  width: auto;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  border-color: var(--neon-green);
-  color: var(--neon-green);
-  text-shadow: 0 0 6px var(--neon-green);
-}
-#mobileStats #mStartWave:hover {
-  background: rgba(0,255,159,0.1);
-}
-
-/* ── RESPONSIVE BREAKPOINT ── */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  /* Hide desktop panels */
-  #ui { display: none; }
-  #analyticsBox { display: none; }
-
-  /* Show mobile chrome */
-  #mobileStats { display: flex; }
-  #mobileNav { display: flex; }
-  #mobileDrawer { display: block; }
-
-  /* Canvas fills space between top bar and bottom nav */
-  #game {
-    position: fixed;
-    top: 44px;
-    left: 0;
-    right: 0;
-    bottom: 52px;
-    width: 100% !important;
-    touch-action: none;
-  }
-
-  /* Drawer content */
-  #mobileDrawer .stat { font-size: 15px; margin: 5px 0; }
-  #mobileDrawer button { font-size: 15px; padding: 10px; }
-  #mobileDrawer .infoBtn { display: none; } /* hide info buttons on mobile */
-  #mobileDrawer .small { font-size: 13px; }
-
-  /* Prevent tooltip on mobile (we use tap modals instead) */
-  #tooltip { display: none !important; }
-
-  /* Bigger touch targets for shop controls */
-  #mobileDrawer .row button { min-height: 44px; }
-}
 </style>
 </head>
 <body>
@@ -517,29 +381,6 @@ hr {
   </div>
 </div>
 
-<!-- MOBILE STATS BAR (top) -->
-<div id="mobileStats">
-  <div class="mStat">💰 <span id="mMoney"></span></div>
-  <div class="mStat">⭐ <span id="mRep"></span></div>
-  <div class="mStat">👥 <span id="mVisitors"></span></div>
-  <div style="flex:1"></div>
-  <button id="mStartWave" onclick="startWave()">▶ START</button>
-</div>
-
-<!-- MOBILE DRAWER (slides up) -->
-<div id="mobileDrawer" class="hidden">
-  <div id="mobileDrawerContent"></div>
-</div>
-
-<!-- MOBILE BOTTOM NAV -->
-<div id="mobileNav">
-  <button id="mNavCanvas" class="active" onclick="setMobileTab('canvas')">🗺 MAP</button>
-  <button id="mNavControls" onclick="setMobileTab('controls')">🎛 CONTROLS</button>
-  <button id="mNavAnalytics" onclick="setMobileTab('analytics')">📊 STATS</button>
-</div>
-
-
-
 <!-- floating tooltip -->
 <div id="tooltip"></div>
 
@@ -547,16 +388,9 @@ hr {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function isMobile(){ return window.innerWidth <= 768; }
-
 function resizeCanvas(){
-  if(isMobile()){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 44 - 52; // minus top bar and bottom nav
-  } else {
-    canvas.width = window.innerWidth - 320 - 260;
-    canvas.height = window.innerHeight;
-  }
+  canvas.width = window.innerWidth - 320 - 260;
+  canvas.height = window.innerHeight;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -1205,76 +1039,64 @@ function buildReputationPanel(){
 
 function buildRulesPanel(){
   document.getElementById("rulesPanel").innerHTML = `
-    <b>🎯 Game Objective</b><br>
-    Manage mall security to maximize profit while maintaining reputation. Balance security costs against theft losses.<br><br>
+    <b>🎯 Inpugnity!</b><br>
+    Manage your mall's security to maximize profit while maintaining reputation. Balance security costs against theft losses and organized crime threats.<br><br>
     
     <b>💰 Economy</b><br>
-    • Start with £2000<br>
-    • Earn 35% from each purchase<br>
-    • Lose 60% of shop value per theft<br>
-    • Guards cost £1/second during waves<br>
-    • Cameras are one-time £50 cost<br><br>
+    • Start with £1,500<br>
+    • Earn from purchases (varies by shop value)<br>
+    • Lose 40-65% of shop value per theft<br>
+    • Guards cost £150 + £1/sec (scales with reputation)<br>
+    • Cameras cost £50 one-time (count limited by CCTV level)<br>
+    • Salary scales with reputation (capped at ×1.4 for security)<br><br>
     
     <b>⭐ Reputation System</b><br>
-    • Start at 50 reputation<br>
-    • +1 per purchase, -1.5 per theft<br>
-    • High rep (70+): More customers, big spenders appear<br>
-    • Low rep (0-20): Fewer customers, more criminals<br>
-    • Reputation drives visitor mix and volume<br><br>
+    • Start at 25 reputation<br>
+    • Gain from purchases, lose from thefts<br>
+    • High rep (70+): More customers, big spenders, flash mob risk<br>
+    • Low rep (0-30): Fewer customers, more criminals<br>
+    • Rep 75+: Security salary scaling begins (+20% per 50 rep, max ×1.4)<br><br>
     
     <b>👥 Visitor Types</b><br>
-    • 🟢 Ordinary (green): Low theft risk, reliable shoppers<br>
-    • 🟡 Opportunist (yellow): Steal if opportunity arises<br>
-    • 🔴 Determined (red): High motivation to steal<br>
-    • ✨ Big Spender (large green + gold glow): Multiple purchases, no theft<br><br>
+    • 🟢 Ordinary (teal): Low theft risk, reliable shoppers<br>
+    • 🟡 Opportunist (amber): Steal if opportunity + crowd bonus<br>
+    • 🔴 Determined (orange-red): High motivation, multiple thefts<br>
+    • 🔴 Specialist (crimson pulse): Professionals, devastating losses<br>
+    • ✨ Big Spender (gold shimmer): Multiple purchases, no theft (rep 50+)<br><br>
     
     <b>🏪 Shop Strategies</b><br>
-    <b>Profit Model:</b> Maximize revenue but increase theft opportunity<br>
-    <b>Security Model:</b> Choose one or both:<br>
-    • Target Hardening (🔒): Physical barriers reduce opportunity<br>
-    • Guardianship (👁): Staff presence reduces motivation<br><br>
+    <b>Profit Model:</b> 6 tiers of revenue upgrades, increased opportunity<br>
+    <b>Security Model:</b> Target Hardening (🔒) reduces opportunity<br>
+    • Can unlock opposite branch for £500 (requires shop rep)<br>
+    • Profit → Security: needs 25+ shop rep<br>
+    • Security → Profit: needs 50+ shop rep<br><br>
     
     <b>🛡️ Security Tools</b><br>
-    • <b>CCTV Infrastructure:</b> £120-720, enhances ALL cameras (+2 risk/level)<br>
-      - Does NOT provide global surveillance<br>
-      - Boosts placed cameras only<br>
-    • <b>Guards:</b> £150 + £1/sec, adds +20 risk in 130px radius<br>
-      - Patrol linearly along corridors or across shops<br>
-      - Dark blue circle shows active patrol position<br>
-    • <b>Cameras:</b> £50, mark visitors when crossed<br>
-      - 1st camera: +8 risk for 10s<br>
-      - 2nd camera: +12 risk for 10s<br>
-      - 3rd camera: +15 risk for 10s<br>
-      - 4th+ camera: +18 risk (max)<br>
-      - Marks stack and last 10 seconds<br>
-      - Two-tap placement: position, then aim<br><br>
+    • <b>CCTV:</b> Unlocks camera capacity (Lvl 1: 2 cams → Lvl 5: 10 cams)<br>
+    • <b>Guards:</b> £150 + £1/sec, 130px radius, patrol corridors<br>
+    • <b>Cameras:</b> £50, vision cone marks visitors crossing<br>
+    • <b>Synergies:</b> Guards near hardened shops or cameras near guards boost effectiveness<br><br>
     
-    <b>🔗 Synergies</b><br>
-    • <b>Camera + Target Hardening:</b> +5 bonus risk to marks<br>
-    • <b>Guard + Guardianship:</b> +5 bonus risk<br>
-    Combine security layers for maximum effectiveness!<br><br>
+    <b>🚨 Organized Crime</b><br>
+    • <b>Flash Mobs (Wave 9+, Rep 45+):</b> 8-22 coordinated thieves swarm highest-value shop<br>
+    • <b>Professional Crew (Wave 11+, Rep 65+):</b><br>
+      - Scout cases 3-4 shops (looks ordinary)<br>
+      - CCTV Lvl 3+ can catch scout on camera → degrades crew<br>
+      - Crew follows scout, targets cased shops with precision<br>
+      - Scales with knowledge: more operatives, higher theft value<br><br>
     
-    <b>🎲 Theft Mechanics</b><br>
-    Theft occurs when:<br>
-    theftScore = Motivation + Opportunity - Risk > 40<br>
-    • Motivation: Visitor's desire to steal<br>
-    • Opportunity: How easy the shop is to steal from<br>
-    • Risk: Security presence (cameras, guards)<br><br>
+    <b>🏬 Shop Unlocks</b><br>
+    • Wave 3: Tech Accessories (£400, rep 60+)<br>
+    • Wave 5: Bookstore (£400, rep 70+)<br>
+    • Wave 7: Luxury District - 2 shops (£1,350, rep 75+, needs Tech + Bookstore)<br>
+    • Wave 10: Entertainment - 4 shops (£2,000, rep 80+, needs Luxury)<br><br>
     
-    <b>📊 Wave System</b><br>
-    • 30-second waves with planning phase between<br>
-    • Visitors spawn in first 12 seconds<br>
-    • Wave ends when timer + all visitors leave<br>
-    • Previous wave stats shown during planning<br><br>
-    
-    <b>💡 Tips</b><br>
-    • 🛡️ Shield = security prevented theft!<br>
-    • Place cameras at chokepoints to mark visitors<br>
-    • CCTV upgrades boost all cameras (+2/level)<br>
-    • Guards patrol along corridors and across shops<br>
-    • Check "Thefts by Shop" to prioritize upgrades<br>
-    • Big spenders (gold glow) unlock at 70+ reputation<br>
-    • Camera network + CCTV = powerful combo!
+    <b>💡 Strategy Tips</b><br>
+    • Camera networks detect scouts before crew arrives<br>
+    • Flash mobs prioritize valuable shops with low hardening<br>
+    • Build shop rep before switching strategies<br>
+    • Late unlocks are expensive — save early profits<br>
+    • Security salary scaling makes high-rep expansion costly
   `;
 }
 
@@ -1367,7 +1189,7 @@ const unlockableShops = [
   {
     wave: 3,
     minRep: 60,
-    cost: 300,
+    cost: 400,
     id: "techaccessories",
     shop: {
       name: "Tech Accessories",
@@ -1388,7 +1210,7 @@ const unlockableShops = [
   {
     wave: 5,
     minRep: 70,
-    cost: 500,
+    cost: 400,
     id: "bookstore",
     shop: {
       name: "Bookstore",
@@ -1409,7 +1231,7 @@ const unlockableShops = [
   {
     wave: 7,
     minRep: 75,
-    cost: 900,
+    cost: 1350,
     id: "luxurydistrict",
     requires: ["techaccessories", "bookstore"], // Needs BOTH first (sequential)
     multiShop: true,
@@ -1449,7 +1271,7 @@ const unlockableShops = [
   {
     wave: 10,
     minRep: 80,
-    cost: 1000,
+    cost: 2000,
     id: "entertainmentcomplex",
     requires: ["luxurydistrict"], // Needs luxury district first (sequential)
     multiShop: true,
@@ -2612,6 +2434,12 @@ function unlockSecurityBranch(i){
   if(shop.securityBranchUnlocked) return;
   if(money < 500) return;
   
+  // Reputation requirement: shop must have at least 25 rep (25% of max 100)
+  if(shop.rep < 25){
+    alert("This shop needs at least 25 reputation to unlock the security branch.");
+    return;
+  }
+  
   money -= 500;
   shop.securityBranchUnlocked = true;
   shop.hardeningTier = 0; // Start at tier 0
@@ -2626,6 +2454,12 @@ function unlockProfitBranch(i){
   if(shop.strategy !== "security") return;
   if(shop.profitBranchUnlocked) return;
   if(money < 500) return;
+  
+  // Reputation requirement: shop must have at least 50 rep (50% of max 100)
+  if(shop.rep < 50){
+    alert("This shop needs at least 50 reputation to unlock the profit branch.");
+    return;
+  }
   
   money -= 500;
   shop.profitBranchUnlocked = true;
@@ -2846,7 +2680,6 @@ function buildShopUnlockUI(){
 
 function startWave(){
   if(gamePhase !== "planning") return;
-  if(isMobile()) setMobileTab('canvas'); // Show map when wave begins
 
   // reset shop heat each wave
   shops.forEach(shop => shop.theftCount = 0);
@@ -3286,8 +3119,6 @@ function closestPointOnLine(px, py, x1, y1, x2, y2){
 
 // CLICK HANDLER
 canvas.addEventListener("click", function(e){
-  if(isMobile()) return; // Mobile handled by touchend → handleCanvasTap
-
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -3403,8 +3234,6 @@ canvas.addEventListener("click", function(e){
 
 // MOUSEMOVE HANDLER (SEPARATE)
 canvas.addEventListener("mousemove", function(e){
-  if(isMobile()) return;
-
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -3433,187 +3262,6 @@ canvas.addEventListener("mousemove", function(e){
 
 });
 
-
-/* ======================
-   MOBILE SUPPORT
-====================== */
-
-// ── MAP TRANSFORM: auto-fit map to canvas, no panning needed ──
-const MAP_BOUNDS = { minX: 80, maxX: 1160, minY: 60, maxY: 900 };
-const MAP_PAD = 20;
-
-function getMapTransform(){
-  if(!isMobile()) return { scale: 1, offsetX: 0, offsetY: 0 };
-  const mapW = MAP_BOUNDS.maxX - MAP_BOUNDS.minX;
-  const mapH = MAP_BOUNDS.maxY - MAP_BOUNDS.minY;
-  const availW = canvas.width  - MAP_PAD * 2;
-  const availH = canvas.height - MAP_PAD * 2;
-  const scale = Math.min(availW / mapW, availH / mapH);
-  const offsetX = MAP_PAD + (availW - mapW * scale) / 2 - MAP_BOUNDS.minX * scale;
-  const offsetY = MAP_PAD + (availH - mapH * scale) / 2 - MAP_BOUNDS.minY * scale;
-  return { scale, offsetX, offsetY };
-}
-
-function screenToMap(sx, sy){
-  const { scale, offsetX, offsetY } = getMapTransform();
-  return { x: (sx - offsetX) / scale, y: (sy - offsetY) / scale };
-}
-
-// Current mobile tab
-let mobileTab = 'canvas';
-
-function setMobileTab(tab){
-  mobileTab = tab;
-  const drawer = document.getElementById('mobileDrawer');
-  const navBtns = document.querySelectorAll('#mobileNav button');
-  navBtns.forEach(b => b.classList.remove('active'));
-  const tabMap = { canvas: 0, controls: 1, analytics: 2 };
-  if(navBtns[tabMap[tab]]) navBtns[tabMap[tab]].classList.add('active');
-  if(tab === 'canvas'){
-    drawer.classList.add('hidden');
-  } else {
-    drawer.classList.remove('hidden');
-    buildMobileDrawer(tab);
-  }
-}
-
-function buildMobileDrawer(tab){
-  var el = document.getElementById('mobileDrawerContent');
-  if(!el) return;
-  if(tab === 'controls'){
-    var phase = gamePhase === 'planning' ? 'Planning' : 'Wave Active';
-    var repMult = getRepSalaryMultiplier();
-    var projSalary = getTotalSalaryPerSec() * waveLength;
-    var multStr = repMult > 1.0 ? ' (x' + repMult.toFixed(2) + ')' : '';
-    var threatLines = '';
-    if(flashMobKnowledge > 0) threatLines += '<div style="color:#ff9800">Flash Mob: ' + flashMobKnowledge + '/10</div>';
-    if(crewKnowledge > 0) threatLines += '<div style="color:#bf00ff">Crew: ' + crewKnowledge + '/10 (' + (2+Math.floor(crewKnowledge/4)) + ' ops)</div>';
-    el.innerHTML =
-      '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
-        '<span style="font-size:14px;">Wave <span style="color:var(--neon-yellow)">' + waveNumber + '</span>' +
-        ' &middot; <span style="color:var(--neon-cyan)">' + phase + '</span></span>' +
-        '<span style="font-size:12px;color:var(--text-dim);margin-left:auto;">Est: \u00a3' + projSalary.toFixed(0) + multStr + '</span>' +
-      '</div>' +
-      (threatLines ? '<div style="padding:5px 8px;background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.3);border-radius:4px;margin-bottom:8px;">' + threatLines + '</div>' : '') +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">' +
-        '<button onclick="addGuard();setMobileTab(\'canvas\')">Guard \u00a3150</button>' +
-        '<button onclick="addCamera();setMobileTab(\'canvas\')">Camera \u00a350</button>' +
-      '</div>' +
-      '<div id="mCCTVPanel" style="margin-bottom:8px;font-size:13px;"></div>' +
-      '<div id="mShopUnlockPanel" style="margin-bottom:8px;"></div>' +
-      '<div id="mShopControls"></div>';
-    var cctvSrc = document.getElementById('cctvPanel');
-    var cctvDst = document.getElementById('mCCTVPanel');
-    if(cctvSrc && cctvDst) cctvDst.innerHTML = cctvSrc.innerHTML;
-    var unlockSrc = document.getElementById('shopUnlockPanel');
-    var unlockDst = document.getElementById('mShopUnlockPanel');
-    if(unlockSrc && unlockDst) unlockDst.innerHTML = unlockSrc.innerHTML;
-    var shopSrc = document.getElementById('shopControls');
-    var shopDst = document.getElementById('mShopControls');
-    if(shopSrc && shopDst) shopDst.innerHTML = shopSrc.innerHTML;
-  } else if(tab === 'analytics'){
-    var src = document.getElementById('analyticsPanel');
-    el.innerHTML =
-      '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-        '<button onclick="setRightMode(\'wave\');buildMobileDrawer(\'analytics\')" style="flex:1;padding:6px;font-size:13px;">Wave</button>' +
-        '<button onclick="setRightMode(\'info\');buildMobileDrawer(\'analytics\')" style="flex:1;padding:6px;font-size:13px;">Security</button>' +
-        '<button onclick="setRightMode(\'rules\');buildMobileDrawer(\'analytics\')" style="flex:1;padding:6px;font-size:13px;">Rules</button>' +
-      '</div>' +
-      '<div style="font-size:14px;">' + (src ? src.innerHTML : '') + '</div>';
-  }
-}
-function updateMobileStats(){
-  if(!isMobile()) return;
-  const mMoney = document.getElementById('mMoney');
-  const mRep   = document.getElementById('mRep');
-  const mVis   = document.getElementById('mVisitors');
-  const mBtn   = document.getElementById('mStartWave');
-  if(mMoney) mMoney.innerText = '£' + Math.round(money);
-  if(mRep)   mRep.innerText   = Math.round(reputation);
-  if(mVis)   mVis.innerText   = visitors.length;
-  if(mBtn)   mBtn.style.display = gamePhase === 'planning' ? '' : 'none';
-  if(mobileTab !== 'canvas') buildMobileDrawer(mobileTab);
-}
-
-// ── TOUCH EVENTS ──
-let touchStartTime = 0, touchStartX = 0, touchStartY = 0, didDrag = false;
-
-canvas.addEventListener('touchstart', function(e){
-  e.preventDefault();
-  const t = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  touchStartX = t.clientX - rect.left;
-  touchStartY = t.clientY - rect.top;
-  touchStartTime = Date.now();
-  didDrag = false;
-}, { passive: false });
-
-canvas.addEventListener('touchmove', function(e){
-  e.preventDefault();
-  const t = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  const sx = t.clientX - rect.left;
-  const sy = t.clientY - rect.top;
-  if(Math.hypot(sx - touchStartX, sy - touchStartY) > 8) didDrag = true;
-  if(placingCamera && cameraPlacementStep === 2 && tempCamera){
-    const m = screenToMap(sx, sy);
-    tempCamera.angle = Math.atan2(m.y - tempCamera.y, m.x - tempCamera.x);
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchend', function(e){
-  e.preventDefault();
-  const elapsed = Date.now() - touchStartTime;
-  if(elapsed < 350 && !didDrag){
-    handleCanvasTap(touchStartX, touchStartY);
-  } else if(placingCamera && cameraPlacementStep === 2 && didDrag){
-    cameras.push(tempCamera);
-    money -= 50;
-    cameras.forEach(c => c.synergyBonus = undefined);
-    guards.forEach(g => g.synergyBonus = undefined);
-    buildCCTVUI(); updateCameraButton();
-    placingCamera = false; cameraPlacementStep = 0; tempCamera = null;
-    canvas.style.cursor = 'default';
-    setMobileTab('controls');
-  }
-}, { passive: false });
-
-function handleCanvasTap(sx, sy){
-  var m = screenToMap(sx, sy);
-  var x = m.x, y = m.y;
-
-  if(placingGuard && gamePhase === 'planning'){
-    guards.push({ x:x, y:y, radius:130, patrolPath:calculateGuardPatrolPath(x,y), patrolProgress:0, patrolDirection:1 });
-    cameras.forEach(function(c){ c.synergyBonus = undefined; });
-    guards.forEach(function(g){ g.synergyBonus = undefined; });
-    money -= 150; placingGuard = false; canvas.style.cursor = 'default';
-    setMobileTab('controls'); return;
-  }
-  if(placingCamera && gamePhase === 'planning' && cameraPlacementStep === 1){
-    var snapped = snapCameraToWall(x, y);
-    tempCamera = { x:snapped.x, y:snapped.y, angle:0, range:150, fov:Math.PI/3 };
-    cameraPlacementStep = 2; return;
-  }
-  if(placingCamera && gamePhase === 'planning' && cameraPlacementStep === 2){
-    cameras.push(tempCamera); money -= 50;
-    cameras.forEach(function(c){ c.synergyBonus = undefined; });
-    guards.forEach(function(g){ g.synergyBonus = undefined; });
-    buildCCTVUI(); updateCameraButton();
-    placingCamera = false; cameraPlacementStep = 0; tempCamera = null;
-    canvas.style.cursor = 'default'; setMobileTab('controls'); return;
-  }
-  for(var i = 0; i < shops.length; i++){
-    var node = nodes[shops[i].node];
-    var r = (node.size === 'large' ? 80 : 65);
-    if(Math.hypot(x - node.x, y - node.y) < r){
-      selectedShopIndex = i;
-      buildSelectedShopUI();
-      setMobileTab('controls'); return;
-    }
-  }
-  selectedShopIndex = null;
-  buildSelectedShopUI();
-}
 
 /* ======================
    VISITOR LOGIC
@@ -5180,13 +4828,7 @@ function roundRect(ctx, x, y, w, h, r){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Apply auto-fit transform on mobile — scales + centres entire map
   ctx.save();
-  if(isMobile()){
-    const { scale, offsetX, offsetY } = getMapTransform();
-    ctx.translate(offsetX, offsetY);
-    ctx.scale(scale, scale);
-  }
 
   // === VAPORWAVE BACKGROUND ===
   // Deep purple base
@@ -5447,11 +5089,6 @@ function draw(){
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.shadowBlur = 0;
-  ctx.fillStyle = 'rgba(255,45,120,0.8)';
-  ctx.font = "bold 11px 'Orbitron', sans-serif";
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText("HUB", nodes.hub.x, nodes.hub.y);
 
   // === GUARDS ===
   guards.forEach(g=>{
@@ -5711,38 +5348,6 @@ function draw(){
     ctx.restore();
     ctx.shadowBlur = 0;
   });
-
-  // Restore pan transform
-  ctx.restore();
-
-  // Mobile placement hints (drawn outside pan transform)
-  if(isMobile()){
-    if(placingGuard){
-      ctx.fillStyle = 'rgba(13,0,21,0.85)';
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-      ctx.fillStyle = '#00f5ff';
-      ctx.font = "bold 13px 'Orbitron', sans-serif";
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('TAP MAP TO PLACE GUARD', canvas.width/2, canvas.height - 25);
-    } else if(placingCamera && cameraPlacementStep === 1){
-      ctx.fillStyle = 'rgba(13,0,21,0.85)';
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-      ctx.fillStyle = '#ff2d78';
-      ctx.font = "bold 13px 'Orbitron', sans-serif";
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('TAP MAP TO PLACE CAMERA', canvas.width/2, canvas.height - 25);
-    } else if(placingCamera && cameraPlacementStep === 2){
-      ctx.fillStyle = 'rgba(13,0,21,0.85)';
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-      ctx.fillStyle = '#ff2d78';
-      ctx.font = "bold 13px 'Orbitron', sans-serif";
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('DRAG TO AIM · TAP TO CONFIRM', canvas.width/2, canvas.height - 25);
-    }
-  }
 
   document.getElementById("money").innerText = Math.round(money);
   document.getElementById("rep").innerText = Math.round(reputation);
