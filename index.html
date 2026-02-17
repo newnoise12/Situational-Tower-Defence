@@ -2,6 +2,8 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>MALL MANAGER '89</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -291,6 +293,140 @@ hr {
   letter-spacing: 0.08em;
 }
 
+/* ── MOBILE BOTTOM NAV ── */
+#mobileNav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 52px;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--panel-border);
+  z-index: 200;
+  display: flex;
+}
+
+#mobileNav button {
+  flex: 1;
+  margin: 0;
+  border: none;
+  border-right: 1px solid var(--panel-border);
+  border-radius: 0;
+  padding: 0;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  text-shadow: none;
+  background: transparent;
+}
+#mobileNav button:last-child { border-right: none; }
+#mobileNav button.active {
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+  background: rgba(0,245,255,0.05);
+}
+#mobileNav button:hover {
+  background: rgba(0,245,255,0.05);
+  box-shadow: none;
+}
+
+/* ── MOBILE DRAWER ── */
+#mobileDrawer {
+  display: none;
+  position: fixed;
+  bottom: 52px; left: 0; right: 0;
+  height: 45vh;
+  background: var(--panel-bg);
+  border-top: 2px solid var(--neon-purple);
+  box-shadow: 0 -4px 30px rgba(191,0,255,0.25);
+  z-index: 199;
+  overflow-y: auto;
+  padding: 12px;
+  transition: transform 0.25s ease;
+}
+#mobileDrawer.hidden {
+  transform: translateY(100%);
+}
+
+/* ── MOBILE STATS BAR ── */
+#mobileStats {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 44px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--panel-border);
+  z-index: 200;
+  align-items: center;
+  padding: 0 10px;
+  gap: 10px;
+  font-size: 14px;
+  overflow: hidden;
+}
+#mobileStats .mStat {
+  white-space: nowrap;
+  color: var(--text-main);
+}
+#mobileStats .mStat span {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 6px rgba(255,230,0,0.5);
+}
+#mobileStats #mStartWave {
+  margin: 0;
+  padding: 4px 10px;
+  width: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+  text-shadow: 0 0 6px var(--neon-green);
+}
+#mobileStats #mStartWave:hover {
+  background: rgba(0,255,159,0.1);
+}
+
+/* ── RESPONSIVE BREAKPOINT ── */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Hide desktop panels */
+  #ui { display: none; }
+  #analyticsBox { display: none; }
+
+  /* Show mobile chrome */
+  #mobileStats { display: flex; }
+  #mobileNav { display: flex; }
+  #mobileDrawer { display: block; }
+
+  /* Canvas fills space between top bar and bottom nav */
+  #game {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    bottom: 52px;
+    width: 100% !important;
+    touch-action: none;
+  }
+
+  /* Drawer content */
+  #mobileDrawer .stat { font-size: 15px; margin: 5px 0; }
+  #mobileDrawer button { font-size: 15px; padding: 10px; }
+  #mobileDrawer .infoBtn { display: none; } /* hide info buttons on mobile */
+  #mobileDrawer .small { font-size: 13px; }
+
+  /* Prevent tooltip on mobile (we use tap modals instead) */
+  #tooltip { display: none !important; }
+
+  /* Bigger touch targets for shop controls */
+  #mobileDrawer .row button { min-height: 44px; }
+}
 </style>
 </head>
 <body>
@@ -381,6 +517,29 @@ hr {
   </div>
 </div>
 
+<!-- MOBILE STATS BAR (top) -->
+<div id="mobileStats">
+  <div class="mStat">💰 <span id="mMoney"></span></div>
+  <div class="mStat">⭐ <span id="mRep"></span></div>
+  <div class="mStat">👥 <span id="mVisitors"></span></div>
+  <div style="flex:1"></div>
+  <button id="mStartWave" onclick="startWave()">▶ START</button>
+</div>
+
+<!-- MOBILE DRAWER (slides up) -->
+<div id="mobileDrawer" class="hidden">
+  <div id="mobileDrawerContent"></div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mobileNav">
+  <button id="mNavCanvas" class="active" onclick="setMobileTab('canvas')">🗺 MAP</button>
+  <button id="mNavControls" onclick="setMobileTab('controls')">🎛 CONTROLS</button>
+  <button id="mNavAnalytics" onclick="setMobileTab('analytics')">📊 STATS</button>
+</div>
+
+
+
 <!-- floating tooltip -->
 <div id="tooltip"></div>
 
@@ -388,9 +547,16 @@ hr {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+function isMobile(){ return window.innerWidth <= 768; }
+
 function resizeCanvas(){
-  canvas.width = window.innerWidth - 320 - 260;
-  canvas.height = window.innerHeight;
+  if(isMobile()){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 44 - 52; // minus top bar and bottom nav
+  } else {
+    canvas.width = window.innerWidth - 320 - 260;
+    canvas.height = window.innerHeight;
+  }
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -2680,6 +2846,7 @@ function buildShopUnlockUI(){
 
 function startWave(){
   if(gamePhase !== "planning") return;
+  if(isMobile()) setMobileTab('canvas'); // Show map when wave begins
 
   // reset shop heat each wave
   shops.forEach(shop => shop.theftCount = 0);
@@ -3119,6 +3286,7 @@ function closestPointOnLine(px, py, x1, y1, x2, y2){
 
 // CLICK HANDLER
 canvas.addEventListener("click", function(e){
+  if(isMobile()) return; // Mobile handled by touchend → handleCanvasTap
 
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -3235,6 +3403,7 @@ canvas.addEventListener("click", function(e){
 
 // MOUSEMOVE HANDLER (SEPARATE)
 canvas.addEventListener("mousemove", function(e){
+  if(isMobile()) return;
 
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -3264,6 +3433,249 @@ canvas.addEventListener("mousemove", function(e){
 
 });
 
+
+/* ======================
+   MOBILE SUPPORT
+====================== */
+
+// Pan state
+let panX = 0, panY = 0;
+let isPanning = false;
+let panStartX = 0, panStartY = 0;
+let panOriginX = 0, panOriginY = 0;
+
+// Current mobile tab
+let mobileTab = 'canvas';
+
+function setMobileTab(tab){
+  mobileTab = tab;
+  const drawer = document.getElementById('mobileDrawer');
+  const navBtns = document.querySelectorAll('#mobileNav button');
+
+  // Update nav highlight
+  navBtns.forEach(b => b.classList.remove('active'));
+  const tabMap = { canvas: 0, controls: 1, analytics: 2 };
+  if(navBtns[tabMap[tab]]) navBtns[tabMap[tab]].classList.add('active');
+
+  if(tab === 'canvas'){
+    drawer.classList.add('hidden');
+    // Reset cursor state if we left mid-placement
+  } else {
+    drawer.classList.remove('hidden');
+    buildMobileDrawer(tab);
+  }
+}
+
+function buildMobileDrawer(tab){
+  const el = document.getElementById('mobileDrawerContent');
+  if(!el) return;
+
+  if(tab === 'controls'){
+    // Mirror: phase/wave info + CCTV + place guard/camera + shop controls
+    const phase = gamePhase === 'planning' ? 'Planning' : 'Wave Active';
+    const repMult = getRepSalaryMultiplier();
+    const projSalary = getTotalSalaryPerSec() * waveLength;
+    const multStr = repMult > 1.0 ? ` <span style="color:var(--neon-yellow)">(sec ×${repMult.toFixed(2)})</span>` : '';
+
+    // Threat intel lines
+    let threatLines = '';
+    if(flashMobKnowledge > 0) threatLines += `<div style="color:#ff9800;font-size:13px">⚡ Flash Mob intel: ${flashMobKnowledge}/10</div>`;
+    if(crewKnowledge > 0) threatLines += `<div style="color:#bf00ff;font-size:13px">🎯 Crew intel: ${crewKnowledge}/10 (${2+Math.floor(crewKnowledge/4)} operatives)</div>`;
+
+    el.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;font-size:14px;">Wave <span style="color:var(--neon-yellow)">${waveNumber}</span> &nbsp;·&nbsp; <span style="color:var(--neon-cyan)">${phase}</span></div>
+        <div style="font-size:13px;color:var(--text-dim)">Est: £${projSalary.toFixed(0)} salary${multStr}</div>
+      </div>
+      ${threatLines ? `<div style="padding:6px 8px;background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.3);border-radius:4px;margin-bottom:8px;">${threatLines}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <button onclick="addGuard();setMobileTab('canvas')">Place Guard (£150)</button>
+        <button onclick="addCamera();setMobileTab('canvas')" id="mPlaceCameraBtn">Place Camera (£50)</button>
+      </div>
+      <div id="mCCTVPanel" style="margin-bottom:8px;font-size:13px;"></div>
+      <div id="mShopUnlockPanel" style="margin-bottom:8px;"></div>
+      <div id="mShopControls"></div>
+    `;
+
+    // Mirror CCTV info
+    const cctvSrc = document.getElementById('cctvPanel');
+    const cctvDst = document.getElementById('mCCTVPanel');
+    if(cctvSrc && cctvDst) cctvDst.innerHTML = cctvSrc.innerHTML;
+
+    // Mirror shop unlock panel
+    const unlockSrc = document.getElementById('shopUnlockPanel');
+    const unlockDst = document.getElementById('mShopUnlockPanel');
+    if(unlockSrc && unlockDst) unlockDst.innerHTML = unlockSrc.innerHTML;
+
+    // Mirror shop controls
+    const shopSrc = document.getElementById('shopControls');
+    const shopDst = document.getElementById('mShopControls');
+    if(shopSrc && shopDst) shopDst.innerHTML = shopSrc.innerHTML;
+
+  } else if(tab === 'analytics'){
+    // Mirror right panel analytics content
+    const src = document.getElementById('analyticsPanel');
+    const info = document.getElementById('infoPanel');
+    const rules = document.getElementById('rulesPanel');
+    el.innerHTML = `
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button onclick="setRightMode('wave');buildMobileDrawer('analytics')" style="flex:1;padding:6px;font-size:13px;">Wave</button>
+        <button onclick="setRightMode('info');buildMobileDrawer('analytics')" style="flex:1;padding:6px;font-size:13px;">Security</button>
+        <button onclick="setRightMode('rules');buildMobileDrawer('analytics')" style="flex:1;padding:6px;font-size:13px;">Rules</button>
+      </div>
+      <div style="font-size:14px;">${src ? src.innerHTML : ''}</div>
+      <div style="font-size:14px;${info && info.style.display!=='none' ? '' : 'display:none'}">${info ? info.innerHTML : ''}</div>
+      <div style="font-size:14px;${rules && rules.style.display!=='none' ? '' : 'display:none'}">${rules ? rules.innerHTML : ''}</div>
+    `;
+  }
+}
+
+function updateMobileStats(){
+  if(!isMobile()) return;
+  const mMoney = document.getElementById('mMoney');
+  const mRep = document.getElementById('mRep');
+  const mVis = document.getElementById('mVisitors');
+  const mBtn = document.getElementById('mStartWave');
+  if(mMoney) mMoney.innerText = '£' + Math.round(money);
+  if(mRep) mRep.innerText = Math.round(reputation);
+  if(mVis) mVis.innerText = visitors.length;
+  if(mBtn) mBtn.style.display = gamePhase === 'planning' ? '' : 'none';
+
+  // Refresh drawer content live if open
+  if(mobileTab !== 'canvas'){
+    buildMobileDrawer(mobileTab);
+  }
+}
+
+// ── TOUCH EVENTS ON CANVAS ──
+
+let touchStartTime = 0;
+let touchStartX = 0, touchStartY = 0;
+let didDrag = false;
+
+canvas.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  touchStartX = touch.clientX - rect.left;
+  touchStartY = touch.clientY - rect.top;
+  touchStartTime = Date.now();
+  didDrag = false;
+
+  // If in camera aiming step 2, start tracking drag for angle
+  if(placingCamera && cameraPlacementStep === 2 && tempCamera){
+    return; // handled in touchmove
+  }
+
+  // Start pan tracking
+  isPanning = true;
+  panStartX = touch.clientX;
+  panStartY = touch.clientY;
+  panOriginX = panX;
+  panOriginY = panY;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', function(e){
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+
+  const dx = touch.clientX - panStartX;
+  const dy = touch.clientY - panStartY;
+
+  if(Math.hypot(dx, dy) > 8) didDrag = true;
+
+  // Camera aiming — drag finger to aim
+  if(placingCamera && cameraPlacementStep === 2 && tempCamera){
+    const angle = Math.atan2(y - tempCamera.y, x - tempCamera.x);
+    tempCamera.angle = angle;
+    return;
+  }
+
+  // Pan the map
+  if(isPanning){
+    panX = panOriginX + dx;
+    panY = panOriginY + dy;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', function(e){
+  e.preventDefault();
+  isPanning = false;
+
+  // Only treat as tap if short duration and no drag
+  const elapsed = Date.now() - touchStartTime;
+  if(elapsed < 300 && !didDrag){
+    // Fire the same logic as a click at touchStartX/Y
+    handleCanvasTap(touchStartX, touchStartY);
+  }
+}, { passive: false });
+
+function handleCanvasTap(x, y){
+  // Adjust for pan offset
+  const ax = x - panX;
+  const ay = y - panY;
+
+  // Guard placement
+  if(placingGuard && gamePhase === 'planning'){
+    let patrolPath = calculateGuardPatrolPath(ax, ay);
+    guards.push({ x: ax, y: ay, radius: 130, patrolPath, patrolProgress: 0, patrolDirection: 1 });
+    cameras.forEach(c => c.synergyBonus = undefined);
+    guards.forEach(g => g.synergyBonus = undefined);
+    money -= 150;
+    placingGuard = false;
+    canvas.style.cursor = 'default';
+    setMobileTab('controls');
+    return;
+  }
+
+  // Camera placement step 1 — place position
+  if(placingCamera && gamePhase === 'planning' && cameraPlacementStep === 1){
+    const snapped = snapCameraToWall(ax, ay);
+    tempCamera = { x: snapped.x, y: snapped.y, angle: 0, range: 150, fov: Math.PI / 3 };
+    cameraPlacementStep = 2;
+    // Show instruction overlay briefly
+    return;
+  }
+
+  // Camera placement step 2 — confirm direction (tap anywhere to confirm current angle)
+  if(placingCamera && gamePhase === 'planning' && cameraPlacementStep === 2){
+    cameras.push(tempCamera);
+    money -= 50;
+    cameras.forEach(c => c.synergyBonus = undefined);
+    guards.forEach(g => g.synergyBonus = undefined);
+    buildCCTVUI(); updateCameraButton();
+    placingCamera = false;
+    cameraPlacementStep = 0;
+    tempCamera = null;
+    canvas.style.cursor = 'default';
+    setMobileTab('controls');
+    return;
+  }
+
+  // Shop selection
+  for(let i = 0; i < shops.length; i++){
+    const shop = shops[i];
+    const node = nodes[shop.node];
+    const isLarge = node.size === 'large';
+    const tapRadius = isLarge ? 80 : 65;
+    if(Math.hypot(ax - node.x, ay - node.y) < tapRadius){
+      selectedShopIndex = i;
+      buildSelectedShopUI();
+      // Auto-open controls drawer to show shop options
+      setMobileTab('controls');
+      return;
+    }
+  }
+
+  // Tap empty space — deselect
+  selectedShopIndex = null;
+  buildSelectedShopUI();
+}
+
+// Pan is applied via ctx.save/translate at start of draw()
 
 /* ======================
    VISITOR LOGIC
@@ -4830,6 +5242,12 @@ function roundRect(ctx, x, y, w, h, r){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // Apply pan offset on mobile
+  ctx.save();
+  if(isMobile()){
+    ctx.translate(panX, panY);
+  }
+
   // === VAPORWAVE BACKGROUND ===
   // Deep purple base
   const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -5354,6 +5772,37 @@ function draw(){
     ctx.shadowBlur = 0;
   });
 
+  // Restore pan transform
+  ctx.restore();
+
+  // Mobile placement hints (drawn outside pan transform)
+  if(isMobile()){
+    if(placingGuard){
+      ctx.fillStyle = 'rgba(13,0,21,0.85)';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+      ctx.fillStyle = '#00f5ff';
+      ctx.font = "bold 13px 'Orbitron', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TAP MAP TO PLACE GUARD', canvas.width/2, canvas.height - 25);
+    } else if(placingCamera && cameraPlacementStep === 1){
+      ctx.fillStyle = 'rgba(13,0,21,0.85)';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+      ctx.fillStyle = '#ff2d78';
+      ctx.font = "bold 13px 'Orbitron', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TAP MAP TO PLACE CAMERA', canvas.width/2, canvas.height - 25);
+    } else if(placingCamera && cameraPlacementStep === 2){
+      ctx.fillStyle = 'rgba(13,0,21,0.85)';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+      ctx.fillStyle = '#ff2d78';
+      ctx.font = "bold 13px 'Orbitron', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('DRAG TO AIM · TAP TO CONFIRM', canvas.width/2, canvas.height - 25);
+    }
+  }
 
   document.getElementById("money").innerText = Math.round(money);
   document.getElementById("rep").innerText = Math.round(reputation);
@@ -5568,6 +6017,9 @@ function draw(){
       ` : '<span class="muted">No organised threats detected yet.</span>'}
     `;
   }
+
+  // Update mobile stats bar + drawer
+  updateMobileStats();
 }
 
 /* ======================
