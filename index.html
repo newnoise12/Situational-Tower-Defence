@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Inpugnity! — Desktop</title>
+<title>Impugnity! — Desktop</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -65,7 +65,7 @@ body::after {
 }
 
 #ui::before {
-  content: 'INPUGNITY!';
+  content: 'IMPUGNITY!';
   display: block;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
@@ -406,6 +406,9 @@ let cameraPlacementStep = 0; // 0 = not placing, 1 = placed waiting for directio
 let tempCamera = null; // Temporary camera while setting direction
 let selectedShopIndex = null;
 let hoveredShopIndex = null;
+
+let mouseX = 0;
+let mouseY = 0;
 
 
 let gamePhase = "planning";
@@ -1039,7 +1042,7 @@ function buildReputationPanel(){
 
 function buildRulesPanel(){
   document.getElementById("rulesPanel").innerHTML = `
-    <b>🎯 Inpugnity!</b><br>
+    <b>🎯 Impugnity!</b><br>
     Manage your mall's security to maximize profit while maintaining reputation. Balance security costs against theft losses and organized crime threats.<br><br>
     
     <b>💰 Economy</b><br>
@@ -2876,14 +2879,6 @@ function resetGame(){
 /* ======================
    GUARDS
 ====================== */
-function addGuard(){
-  if(gamePhase !== "planning") return;
-  if(money < 150) return;
-
-  placingGuard = true;
-  canvas.style.cursor = "crosshair";
-}
-
 /* ======================
    GUARDS & CAMERAS
 ====================== */
@@ -2953,6 +2948,7 @@ function addGuard(){
   if(gamePhase !== "planning") return;
   if(money < 150) return;
 
+  console.log("addGuard called - placingGuard = true");
   placingGuard = true;
   placingCamera = false;
   canvas.style.cursor = "crosshair";
@@ -2969,6 +2965,7 @@ function addCamera(){
     return;
   }
 
+  console.log("addCamera called - placingCamera = true, step = 1");
   placingCamera = true;
   placingGuard = false;
   cameraPlacementStep = 1;
@@ -3237,6 +3234,10 @@ canvas.addEventListener("mousemove", function(e){
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
+  
+  // Track mouse position for placement previews
+  mouseX = x;
+  mouseY = y;
 
   // Update temp camera angle if in step 2
   if(placingCamera && cameraPlacementStep === 2 && tempCamera){
@@ -5190,6 +5191,46 @@ function draw(){
     ctx.textAlign = 'center';
     ctx.fillText('CLICK TO AIM CAMERA', tempCamera.x, tempCamera.y - 170);
   }
+  
+  // Camera placement step 1 preview - crosshair
+  if(placingCamera && cameraPlacementStep === 1 && gamePhase === "planning"){
+    ctx.strokeStyle = 'rgba(255,45,120,0.6)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(mouseX - 15, mouseY);
+    ctx.lineTo(mouseX + 15, mouseY);
+    ctx.moveTo(mouseX, mouseY - 15);
+    ctx.lineTo(mouseX, mouseY + 15);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff2d78';
+    ctx.font = "12px 'VT323', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillText('CLICK TO PLACE', mouseX, mouseY - 25);
+  }
+  
+  // Guard placement preview - radius circle
+  if(placingGuard && gamePhase === "planning"){
+    ctx.strokeStyle = 'rgba(0,245,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 130, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = 'rgba(0,245,255,0.3)';
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = "12px 'VT323', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillText('CLICK TO PLACE GUARD', mouseX, mouseY - 145);
+  }
 
 
 
@@ -5562,9 +5603,6 @@ function draw(){
       ` : '<span class="muted">No organised threats detected yet.</span>'}
     `;
   }
-
-  // Update mobile stats bar + drawer
-  updateMobileStats();
 }
 
 /* ======================
