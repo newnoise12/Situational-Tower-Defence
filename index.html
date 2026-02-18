@@ -384,6 +384,11 @@ hr {
 <!-- floating tooltip -->
 <div id="tooltip"></div>
 
+<!-- Modal overlay -->
+<div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center; padding:20px;">
+  <div id="modalContent" style="background:var(--panel-bg); border:2px solid var(--neon-purple); border-radius:8px; padding:20px; max-width:600px; max-height:80vh; overflow-y:auto; box-shadow:0 8px 40px rgba(191,0,255,0.5);"></div>
+</div>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -1173,6 +1178,20 @@ function hideTooltip(){
   tooltip.style.display = "none";
 }
 
+function showModal(title, content){
+  const modal = document.getElementById("modal");
+  const modalContent = document.getElementById("modalContent");
+  modalContent.innerHTML = 
+    '<h3 style="margin:0 0 16px 0; font-family:Orbitron; color:var(--neon-cyan); text-shadow:0 0 8px var(--neon-cyan);">' + title + '</h3>' +
+    content +
+    '<button onclick="closeModal()" style="width:100%; margin-top:16px; padding:12px; background:transparent; border:1px solid var(--neon-purple); color:var(--neon-cyan); font-family:Orbitron; font-size:14px; cursor:pointer; letter-spacing:0.08em;">Close</button>';
+  modal.style.display = "flex";
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display = "none";
+}
+
 /* ======================
    UPGRADE DATA
 ====================== */
@@ -1195,7 +1214,8 @@ const unlockableShops = [
     cost: 400,
     id: "techaccessories",
     shop: {
-      name: "Tech Accessories",
+      name: "Phone HUB",
+      displayName: "Phone HUB (Tech Accessories)",
       node: "techaccessories",
       type: "TechAccessories",
       value: 55,
@@ -1216,7 +1236,8 @@ const unlockableShops = [
     cost: 400,
     id: "bookstore",
     shop: {
-      name: "Bookstore",
+      name: "Fraynes",
+      displayName: "Fraynes (Bookshop)",
       node: "bookstore",
       type: "Bookstore",
       value: 48,
@@ -1240,7 +1261,8 @@ const unlockableShops = [
     multiShop: true,
     shops: [
       {
-        name: "Luxury Goods",
+        name: "Alpine",
+        displayName: "Alpine (Luxury Goods)",
         node: "luxurygoods",
         type: "LuxuryGoods",
         value: 95,
@@ -1255,7 +1277,8 @@ const unlockableShops = [
         theftCount: 0
       },
       {
-        name: "Wine Shop",
+        name: "Ferment",
+        displayName: "Ferment (Wine Shop)",
         node: "wineshop",
         type: "WineShop",
         value: 60,
@@ -1280,7 +1303,8 @@ const unlockableShops = [
     multiShop: true,
     shops: [
       {
-        name: "Cinema",
+        name: "Picturemax",
+        displayName: "Picturemax (Cinema)",
         node: "cinema",
         type: "Cinema",
         value: 35,
@@ -1295,7 +1319,8 @@ const unlockableShops = [
         theftCount: 0
       },
       {
-        name: "Bowling",
+        name: "Roller-Bowli-Oke",
+        displayName: "Roller-Bowli-Oke (Bowling)",
         node: "bowling",
         type: "Bowling",
         value: 30,
@@ -1310,7 +1335,8 @@ const unlockableShops = [
         theftCount: 0
       },
       {
-        name: "Arcade",
+        name: "Game Palace",
+        displayName: "Game Palace (Arcade)",
         node: "arcade",
         type: "Arcade",
         value: 25,
@@ -1325,7 +1351,8 @@ const unlockableShops = [
         theftCount: 0
       },
       {
-        name: "Food Court 2",
+        name: "Plaza Diner",
+        displayName: "Plaza Diner (Food Court)",
         node: "foodcourt2",
         type: "FoodCourt",
         value: 20,
@@ -1418,10 +1445,11 @@ const nodes = {
 ====================== */
 const shops = [
   {
-    name:"Electronics",
+    name:"Gajit",
+    displayName:"Gajit (Electronics)",
     type:"Electronics",
     node:"north",
-    value:70,
+    value:80,
     baseOpportunity:25,
 
     strategy:null,
@@ -1437,7 +1465,8 @@ const shops = [
     theftCount:0
   },
   {
-    name:"Clothing",
+    name:"Chic Fitz",
+    displayName:"Chic Fitz (Clothing)",
     type:"Clothing",
     node:"east",
     value:40,
@@ -1456,7 +1485,8 @@ const shops = [
     theftCount:0
   },
   {
-    name:"Jewellery",
+    name:"B.H Benson",
+    displayName:"B.H Benson (Jewellery)",
     type:"Jewellery",
     node:"south",
     value:100,
@@ -1476,9 +1506,10 @@ const shops = [
   },
   {
     name:"Food Court",
+    displayName:"Food Court",
     type:"FoodCourt",
     node:"food",
-    value:20,
+    value:25,
     baseOpportunity:10,
 
     strategy:null,
@@ -1494,7 +1525,8 @@ const shops = [
     theftCount:0
   },
   {
-    name:"Supermarket",
+    name:"Produce",
+    displayName:"Produce (Supermarket)",
     type:"Supermarket",
     node:"supermarket",
     value:35,
@@ -1513,11 +1545,12 @@ const shops = [
     theftCount:0
   },
   {
-    name:"Pharmacy",
+    name:"Foreman and Giles",
+    displayName:"Foreman and Giles (Pharmacy)",
     type:"Pharmacy",
     node:"pharmacy",
-    value:55,
-    baseOpportunity:28,
+    value:60,
+    baseOpportunity:30,
 
     strategy:null,
     
@@ -1532,11 +1565,12 @@ const shops = [
     theftCount:0
   },
   {
-    name:"Toy Shop",
+    name:"Kidzone",
+    displayName:"Kidzone (Toys)",
     type:"ToyShop",
     node:"toyshop",
-    value:50,
-    baseOpportunity:24,
+    value:30,
+    baseOpportunity:15,
 
     strategy:null,
     
@@ -1864,10 +1898,10 @@ function buildSelectedShopUI(){
 
   container.innerHTML = `
     <hr>
-    <h4>${shop.name}</h4>
+    <h4>${shop.displayName || shop.name}</h4>
 
     <div class="small">
-      Reputation: ${Math.round(shop.rep)}
+      Value: £${shop.value} | Reputation: ${Math.round(shop.rep)}
     </div>
 
     ${strategySection}
@@ -5067,7 +5101,7 @@ function draw(){
     ctx.fillStyle = repColor;
     ctx.fillRect(barX, barY, barW * repFill, 4);
 
-    // Shop name
+    // Shop name (just the brand name, no category)
     ctx.fillStyle = isSelected ? '#00f5ff' : '#e8d5ff';
     ctx.font = "14px 'VT323', monospace";
     ctx.textAlign = 'center';
@@ -5622,6 +5656,33 @@ buildSelectedShopUI();
 buildCCTVUI(); updateCameraButton();
 setRightMode("wave");
 checkShopUnlocks(); // Check for any unlocks at start
+
+// Show welcome modal
+showModal(
+  "Welcome to Impugnity!",
+  `<div style="line-height:1.6;">
+    <p><b>Your Goal:</b> Maximize profit while maintaining reputation. Balance security costs against theft losses.</p>
+    
+    <p><b>Core Mechanics:</b></p>
+    <p>• <b>Shops</b> generate revenue from purchases but are vulnerable to theft<br>
+    • <b>Reputation</b> (⭐) attracts more customers but also more sophisticated criminals<br>
+    • <b>Security</b> (guards + cameras) prevents theft but costs money<br>
+    • <b>Strategies</b> - Choose profit-focused or security-focused models for each shop</p>
+    
+    <p><b>Organized Crime:</b><br>
+    • <b>Flash Mobs</b> (Wave 9+): Coordinated swarms target valuable shops<br>
+    • <b>Professional Crews</b> (Wave 11+): Scouts case shops, then crews hit them hard</p>
+    
+    <p><b>Tips:</b><br>
+    • Start with 1-2 cameras at chokepoints<br>
+    • Upgrade CCTV to unlock more cameras<br>
+    • Watch for scouts (blend in but case multiple shops)<br>
+    • High rep increases salary costs - plan accordingly</p>
+    
+    <p style="margin-top:12px;"><i>Check the <b>Rules</b> tab (right panel) for detailed mechanics.</i></p>
+  </div>`
+);
+
 loop(0);
 </script>
 </body>
